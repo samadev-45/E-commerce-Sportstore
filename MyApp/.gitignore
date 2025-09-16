@@ -1,0 +1,41 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS junk
+*.DS_Store
+Thumbs.db
+
+# Visual Studio files
+.vscode/
+.vs/
+
+# Logs
+*.log
+
+# NuGet packages
+*.nupkg
+packages/
+
+# Entity Framework
+Migrations/
+
+# Secrets / environment
+appsettings.Development.json
+appsettings.Local.json
+.env
+
+# ASP.NET HTTPS certs
+*.pfx
+*.pem
+
+# Other
+node_modules/
+wwwroot/lib/
