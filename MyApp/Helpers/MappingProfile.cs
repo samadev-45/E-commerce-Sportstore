@@ -1,19 +1,40 @@
 ﻿using AutoMapper;
-using EcommerceAPI.DTOs.Auth;
-using EcommerceAPI.Entities;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using MyApp.DTOs.Auth;
+using MyApp.DTOs.Cart;
+using MyApp.DTOs.Orders;
+using MyApp.DTOs.Products;
+using MyApp.DTOs.Wishlist;
+using MyApp.Entities;
 
-namespace EcommerceAPI.Helpers
+namespace MyApp.Helpers
 {
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
-            // Map RegisterDto -> User (we will set PasswordHash manually after mapping)
-            CreateMap<RegisterDto, User>()
-                .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => "user"))
-                .ForMember(dest => dest.IsBlock, opt => opt.MapFrom(src => false));
+            // Product mappings
+            CreateMap<Product, ProductDto>().ReverseMap();
+
+            // Cart mappings
+            CreateMap<CartItem, CartItemDto>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Product.Price));
+            CreateMap<AddToCartDto, CartItem>();
+
+            // Wishlist mapping
+            CreateMap<WishlistItem, WishlistItemDto>()
+               .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+               .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Product.Price));
+            CreateMap<AddToWishlistDto, WishlistItem>();
+
+            // Orders
+            CreateMap<Order, OrderDto>()
+                .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems));
+
+            CreateMap<OrderItem, OrderItemDto>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
+
+            CreateMap<RegisterDto, User>();
         }
     }
 }

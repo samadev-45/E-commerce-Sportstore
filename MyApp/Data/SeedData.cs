@@ -1,9 +1,9 @@
-﻿using EcommerceAPI.Entities;
+﻿using MyApp.Entities;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 
 
-namespace EcommerceAPI.Data
+namespace MyApp.Data
 {
     public static class SeedData
     {

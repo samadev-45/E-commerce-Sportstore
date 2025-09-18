@@ -1,6 +1,6 @@
-﻿using EcommerceAPI.Entities;
+﻿using MyApp.Entities;
 
-namespace EcommerceAPI.Repositories.Interfaces
+namespace MyApp.Repositories.Interfaces
 {
     public interface IProductRepository
     {
@@ -9,6 +9,7 @@ namespace EcommerceAPI.Repositories.Interfaces
         Task AddAsync(Product product);
         Task UpdateAsync(Product product);
         Task DeleteAsync(Product product);
+
         Task SaveChangesAsync();
     }
 }

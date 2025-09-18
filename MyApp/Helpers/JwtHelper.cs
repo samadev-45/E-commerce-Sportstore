@@ -3,9 +3,9 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
-using EcommerceAPI.Entities;
+using MyApp.Entities;
 
-namespace EcommerceAPI.Helpers
+namespace MyApp.Helpers
 {
     public static class JwtHelper
     {

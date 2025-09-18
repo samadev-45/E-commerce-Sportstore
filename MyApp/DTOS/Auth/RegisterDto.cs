@@ -1,4 +1,4 @@
-﻿namespace EcommerceAPI.DTOs.Auth
+﻿namespace MyApp.DTOs.Auth
 {
     public class RegisterDto
     {

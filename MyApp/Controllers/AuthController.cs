@@ -1,8 +1,8 @@
-﻿using EcommerceAPI.DTOs.Auth;
-using EcommerceAPI.Services.Interfaces;
+﻿using MyApp.DTOs.Auth;
+using MyApp.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EcommerceAPI.Controllers
+namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

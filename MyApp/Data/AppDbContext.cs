@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using EcommerceAPI.Entities;
+using MyApp.Entities;
 
-namespace EcommerceAPI.Data
+namespace MyApp.Data
 {
     public class AppDbContext : DbContext
     {

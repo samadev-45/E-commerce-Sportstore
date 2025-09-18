@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace EcommerceAPI.Entities
+namespace MyApp.Entities
 {
     public class User
     {

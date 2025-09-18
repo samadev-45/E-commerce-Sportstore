@@ -1,6 +1,6 @@
-﻿using EcommerceAPI.DTOs.Auth;
+﻿using MyApp.DTOs.Auth;
 
-namespace EcommerceAPI.Services.Interfaces
+namespace MyApp.Services.Interfaces
 {
     public interface IAuthService
     {

@@ -1,6 +1,6 @@
-﻿using EcommerceAPI.DTOs.Products;
+﻿using MyApp.DTOs.Products;
 
-namespace EcommerceAPI.Services.Interfaces
+namespace MyApp.Services.Interfaces
 {
     public interface IProductService
     {
@@ -10,7 +10,11 @@ namespace EcommerceAPI.Services.Interfaces
         Task<ProductDto?> UpdateAsync(int id, ProductDto dto);
         Task<bool> DeleteAsync(int id);
 
-        // 🔍 New
-        Task<IEnumerable<ProductDto>> SearchAsync(string? name, string? category);
+		//Add products by category
+		Task<IEnumerable<ProductDto>> GetByCategoryAsync(string category);
+
+
+		// search method
+		Task<IEnumerable<ProductDto>> SearchAsync(string? name, string? category);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace EcommerceAPI.Entities
+namespace MyApp.Entities
 {
     public class Product
     {

@@ -1,9 +1,9 @@
-﻿using EcommerceAPI.Data;
-using EcommerceAPI.Entities;
-using EcommerceAPI.Repositories.Interfaces;
+﻿using MyApp.Data;
+using MyApp.Entities;
+using MyApp.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace EcommerceAPI.Repositories.Implementations
+namespace MyApp.Repositories.Implementations
 {
     public class ProductRepository : IProductRepository
     {

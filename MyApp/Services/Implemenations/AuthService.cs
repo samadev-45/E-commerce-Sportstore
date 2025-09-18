@@ -1,13 +1,13 @@
 ﻿using AutoMapper;
-using EcommerceAPI.Data;
-using EcommerceAPI.DTOs.Auth;
-using EcommerceAPI.Entities;
-using EcommerceAPI.Helpers;
-using EcommerceAPI.Services.Interfaces;
+using MyApp.Data;
+using MyApp.DTOs.Auth;
+using MyApp.Entities;
+using MyApp.Helpers;
+using MyApp.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
-namespace EcommerceAPI.Services.Implementations
+namespace MyApp.Services.Implementations
 {
     public class AuthService : IAuthService
     {

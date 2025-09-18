@@ -1,10 +1,9 @@
-﻿using EcommerceAPI.DTOs.Products;
-using EcommerceAPI.Services.Implementations;
-using EcommerceAPI.Services.Interfaces;
+﻿using MyApp.DTOs.Products;
+using MyApp.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EcommerceAPI.Controllers
+namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -17,7 +16,15 @@ namespace EcommerceAPI.Controllers
             _service = service;
         }
 
+        
+        // USER SECTION
+        // -------------------------------
+
+       
+        /// Get all products or search by name/category. (User)
+      
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll([FromQuery] string? name, [FromQuery] string? category)
         {
             if (!string.IsNullOrWhiteSpace(name) || !string.IsNullOrWhiteSpace(category))
@@ -30,7 +37,11 @@ namespace EcommerceAPI.Controllers
             return Ok(products);
         }
 
+        
+        /// Get product by Id. (User)
+       
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(int id)
         {
             var product = await _service.GetByIdAsync(id);
@@ -38,7 +49,26 @@ namespace EcommerceAPI.Controllers
             return Ok(product);
         }
 
+       
+        /// Get products by category. (User)
+      
+        [HttpGet("category/{category}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByCategory(string category)
+        {
+            var products = await _service.GetByCategoryAsync(category);
+            return Ok(products);
+        }
+
+       
+        // ADMIN SECTION
+        // -------------------------------
+
+        
+        /// Create a new product. (Admin only)
+        
         [HttpPost]
+        // [Authorize(Roles = "Admin")]  
         public async Task<IActionResult> Create([FromBody] ProductDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -47,7 +77,11 @@ namespace EcommerceAPI.Controllers
             return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
 
+        
+        /// Update an existing product. (Admin only)
+        
         [HttpPut("{id}")]
+        // [Authorize(Roles = "Admin")]  
         public async Task<IActionResult> Update(int id, [FromBody] ProductDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -58,7 +92,11 @@ namespace EcommerceAPI.Controllers
             return Ok(product);
         }
 
+        
+        /// Delete a product. (Admin only)
+        
         [HttpDelete("{id}")]
+        // [Authorize(Roles = "Admin")]  
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _service.DeleteAsync(id);
@@ -66,14 +104,5 @@ namespace EcommerceAPI.Controllers
 
             return NoContent();
         }
-
-        [HttpGet("search")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Search([FromQuery] string? name, [FromQuery] string? category)
-        {
-            var results = await _service.SearchAsync(name, category);
-            return Ok(results);
-        }
-
     }
 }

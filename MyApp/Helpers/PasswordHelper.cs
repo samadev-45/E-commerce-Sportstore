@@ -1,6 +1,6 @@
 ﻿using BCrypt.Net;
 
-namespace EcommerceAPI.Helpers
+namespace MyApp.Helpers
 {
     public static class PasswordHelper
     {

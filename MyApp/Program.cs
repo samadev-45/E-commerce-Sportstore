@@ -1,32 +1,54 @@
-using EcommerceAPI.Data;
-using EcommerceAPI.Helpers;
-using EcommerceAPI.Repositories.Implementations;
-using EcommerceAPI.Repositories.Interfaces;
-using EcommerceAPI.Services.Implementations;
-using EcommerceAPI.Services.Interfaces;
+ï»¿using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MyApp.Data;
+using MyApp.Helpers;
+using MyApp.Repositories.Implementations;
+using MyApp.Repositories.Interfaces;
+using MyApp.Services.Implementations;
+using MyApp.Services.Interfaces;
 using System.Text;
-using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DbContext
+
+// DATABASE
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// AutoMapper
+
+// AUTOMAPPER
+
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// Services
+
+// DEPENDENCY INJECTION
+
+// Auth
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-//  Don’t forget to register your ProductService/ProductRepository if you need them later
- builder.Services.AddScoped<IProductRepository, ProductRepository>();
- builder.Services.AddScoped<IProductService, ProductService>();
+// Product
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
-// JWT Authentication
+// Cart
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<ICartService, CartService>();
+
+// Wishlist
+builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
+
+// Order
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+
+
+// JWT AUTHENTICATION
+
 var jwt = builder.Configuration.GetSection("Jwt");
 var key = jwt["Key"] ?? throw new ArgumentNullException("Jwt:Key");
 
@@ -49,29 +71,69 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Controllers & Swagger
+
+// CONTROLLERS
+
 builder.Services.AddControllers();
+
+
+// SWAGGER CONFIGURATION
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "MyApp API", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer' followed by your JWT token.\n\nExample: Bearer eyJhbGciOiJIUzI1NiIsInR5..."
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
-// ? Add Swagger middleware here
+
+// MIDDLEWARE
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(); // optional config can go here
+    app.UseSwaggerUI(); // /swagger
 }
 
-// Seed data (optional)
+// Seed database if needed
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    context.Database.Migrate(); 
     SeedData.Initialize(context);
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
+
+app.UseAuthentication(); // Required for JWT
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();
