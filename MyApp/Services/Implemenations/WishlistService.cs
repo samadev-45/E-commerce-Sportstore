@@ -1,10 +1,7 @@
 ﻿using AutoMapper;
-
-
 using MyApp.DTOs.Wishlist;
 using MyApp.Entities;
 using MyApp.Repositories.Interfaces;
-
 using MyApp.Services.Interfaces;
 
 namespace MyApp.Services.Implementations
@@ -13,12 +10,18 @@ namespace MyApp.Services.Implementations
     {
         private readonly IWishlistRepository _wishlistRepo;
         private readonly IProductRepository _productRepo;
+        private readonly ICartRepository _cartRepo;  // 
         private readonly IMapper _mapper;
 
-        public WishlistService(IWishlistRepository wishlistRepo, IProductRepository productRepo, IMapper mapper)
+        public WishlistService(
+            IWishlistRepository wishlistRepo,
+            IProductRepository productRepo,
+            ICartRepository cartRepo,
+            IMapper mapper)
         {
             _wishlistRepo = wishlistRepo;
             _productRepo = productRepo;
+            _cartRepo = cartRepo;
             _mapper = mapper;
         }
 
@@ -53,6 +56,37 @@ namespace MyApp.Services.Implementations
 
             await _wishlistRepo.RemoveAsync(item);
             await _wishlistRepo.SaveChangesAsync();
+            return true;
+        }
+
+        // Move wishlist item to cart
+        public async Task<bool> MoveToCartAsync(int userId, int productId)
+        {
+            var wishlistItem = await _wishlistRepo.GetWishlistItemAsync(userId, productId);
+            if (wishlistItem == null) return false;
+
+            // check if already in cart
+            var cartItem = await _cartRepo.GetCartItemAsync(userId, productId);
+            if (cartItem == null)
+            {
+                await _cartRepo.AddAsync(new CartItem
+                {
+                    UserId = userId,
+                    ProductId = productId,
+                    Quantity = 1
+                });
+            }
+            else
+            {
+                cartItem.Quantity += 1;
+            }
+
+            await _cartRepo.SaveChangesAsync();
+
+            // remove from wishlist
+            await _wishlistRepo.RemoveAsync(wishlistItem);
+            await _wishlistRepo.SaveChangesAsync();
+
             return true;
         }
     }

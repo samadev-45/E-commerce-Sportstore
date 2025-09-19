@@ -6,5 +6,7 @@ namespace MyApp.Services.Interfaces
     {
         Task<OrderDto> CreateOrderAsync(int userId, CreateOrderDto dto);
         Task<IEnumerable<OrderDto>> GetOrdersByUserAsync(int userId);
+        Task<bool> CancelOrderAsync(int userId, int orderId);
+
     }
 }

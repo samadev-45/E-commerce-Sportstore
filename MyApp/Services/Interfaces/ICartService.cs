@@ -7,5 +7,7 @@ namespace MyApp.Services.Interfaces
         Task<IEnumerable<CartItemDto>> GetUserCartAsync(int userId);
         Task<CartItemDto> AddToCartAsync(int userId, AddToCartDto dto);
         Task<bool> RemoveFromCartAsync(int userId, int productId);
+        Task<CartItemDto?> UpdateQuantityAsync(int userId, int productId, int quantity);
+
     }
 }

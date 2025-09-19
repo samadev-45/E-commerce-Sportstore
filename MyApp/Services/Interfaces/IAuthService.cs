@@ -6,5 +6,6 @@ namespace MyApp.Services.Interfaces
     {
         Task<AuthResponseDto?> RegisterAsync(RegisterDto registerDto);
         Task<AuthResponseDto?> LoginAsync(LoginDto loginDto);
+        Task<UserProfileDto?> GetProfileAsync(int userId);
     }
 }

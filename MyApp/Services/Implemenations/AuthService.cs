@@ -70,5 +70,19 @@ namespace MyApp.Services.Implementations
                 Name = user.Name
             };
         }
+        public async Task<UserProfileDto?> GetProfileAsync(int userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return null;
+
+            return new UserProfileDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role
+            };
+        }
+
     }
 }

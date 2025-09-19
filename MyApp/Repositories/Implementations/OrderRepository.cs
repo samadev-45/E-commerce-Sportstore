@@ -41,5 +41,11 @@ namespace MyApp.Repositories.Implementations
         {
             await _context.SaveChangesAsync();
         }
+        public async Task<Order?> GetByUserAndIdAsync(int userId, int orderId)
+        {
+            return await _context.Orders
+                .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
+        }
+
     }
 }

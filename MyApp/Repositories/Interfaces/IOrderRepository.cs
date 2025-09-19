@@ -7,6 +7,8 @@ namespace MyApp.Repositories.Interfaces
         Task AddAsync(Order order);
         Task<Order?> GetByIdAsync(int id);
         Task<IEnumerable<Order>> GetByUserAsync(int userId);
+        Task<Order?> GetByUserAndIdAsync(int userId, int orderId);
+
         Task SaveChangesAsync();
     }
 }

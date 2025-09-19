@@ -45,5 +45,14 @@ namespace MyApp.Controllers
             if (!success) return NotFound();
             return NoContent();
         }
+
+        [HttpPost("move-to-cart/{productId}")]
+        public async Task<IActionResult> MoveToCart(int productId)
+        {
+            var success = await _wishlistService.MoveToCartAsync(GetUserId(), productId);
+            if (!success) return NotFound("Item not found in wishlist");
+
+            return Ok("Item moved to cart successfully");
+        }
     }
 }

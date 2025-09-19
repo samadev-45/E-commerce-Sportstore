@@ -39,5 +39,20 @@ namespace MyApp.Controllers
 
             return Ok(orders);
         }
+
+        //Cancel order
+        [HttpPut("{id}/cancel")]
+        public async Task<IActionResult> CancelOrder(int id)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var result = await _orderService.CancelOrderAsync(userId, id);
+
+            if (!result)
+                return BadRequest("Order cannot be cancelled or not found");
+
+            return Ok(new { message = "Order cancelled successfully" });
+        }
+
     }
 }

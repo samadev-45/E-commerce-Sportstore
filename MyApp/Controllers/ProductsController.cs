@@ -16,20 +16,24 @@ namespace MyApp.Controllers
             _service = service;
         }
 
-        
         // USER SECTION
         // -------------------------------
 
-       
         /// Get all products or search by name/category. (User)
-      
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAll([FromQuery] string? name, [FromQuery] string? category)
         {
             if (!string.IsNullOrWhiteSpace(name) || !string.IsNullOrWhiteSpace(category))
             {
-                var results = await _service.SearchAsync(name, category);
+               
+                var filter = new ProductFilterDto
+                {
+                    Name = name,
+                    Category = category
+                };
+
+                var results = await _service.SearchAsync(filter);
                 return Ok(results);
             }
 
@@ -37,9 +41,7 @@ namespace MyApp.Controllers
             return Ok(products);
         }
 
-        
         /// Get product by Id. (User)
-       
         [HttpGet("{id}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetById(int id)
@@ -49,24 +51,19 @@ namespace MyApp.Controllers
             return Ok(product);
         }
 
-       
         /// Get products by category. (User)
-      
-        [HttpGet("category/{category}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetByCategory(string category)
-        {
-            var products = await _service.GetByCategoryAsync(category);
-            return Ok(products);
-        }
+        //[HttpGet("category/{category}")]
+        //[AllowAnonymous]
+        //public async Task<IActionResult> GetByCategory(string category)
+        //{
+        //    var products = await _service.GetByCategoryAsync(category);
+        //    return Ok(products);
+        //}
 
-       
         // ADMIN SECTION
         // -------------------------------
 
-        
         /// Create a new product. (Admin only)
-        
         [HttpPost]
         // [Authorize(Roles = "Admin")]  
         public async Task<IActionResult> Create([FromBody] ProductDto dto)
@@ -77,9 +74,7 @@ namespace MyApp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
 
-        
         /// Update an existing product. (Admin only)
-        
         [HttpPut("{id}")]
         // [Authorize(Roles = "Admin")]  
         public async Task<IActionResult> Update(int id, [FromBody] ProductDto dto)
@@ -92,9 +87,7 @@ namespace MyApp.Controllers
             return Ok(product);
         }
 
-        
         /// Delete a product. (Admin only)
-        
         [HttpDelete("{id}")]
         // [Authorize(Roles = "Admin")]  
         public async Task<IActionResult> Delete(int id)
@@ -103,6 +96,15 @@ namespace MyApp.Controllers
             if (!deleted) return NotFound();
 
             return NoContent();
+        }
+
+        /// Advanced filter (name, category, price range)
+        [HttpGet("filter")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Filter([FromQuery] ProductFilterDto filter)
+        {
+            var products = await _service.SearchAsync(filter);
+            return Ok(products);
         }
     }
 }

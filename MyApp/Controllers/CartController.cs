@@ -44,5 +44,20 @@ namespace MyApp.Controllers
             if (!success) return NotFound();
             return NoContent();
         }
+
+        [HttpPut("{productId}")]
+        public async Task<IActionResult> UpdateQuantity(int productId, [FromBody] UpdateCartQuantityDto dto)
+        {
+            if (dto.Quantity <= 0)
+                return BadRequest("Quantity must be greater than 0");
+
+            var updatedItem = await _cartService.UpdateQuantityAsync(GetUserId(), productId, dto.Quantity);
+
+            if (updatedItem == null)
+                return NotFound("Item not found in cart");
+
+            return Ok(updatedItem);
+        }
+
     }
 }

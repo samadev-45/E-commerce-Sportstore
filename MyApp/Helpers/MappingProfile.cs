@@ -14,6 +14,7 @@ namespace MyApp.Helpers
         {
             // Product mappings
             CreateMap<Product, ProductDto>().ReverseMap();
+            CreateMap<ProductFilterDto, Product>();
 
             // Cart mappings
             CreateMap<CartItem, CartItemDto>()

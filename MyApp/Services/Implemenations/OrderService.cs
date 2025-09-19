@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyApp.DTOs.Orders;
 using MyApp.Entities;
 using MyApp.Repositories.Interfaces;
@@ -52,5 +53,22 @@ namespace MyApp.Services.Implementations
             var orders = await _orderRepo.GetByUserAsync(userId);
             return _mapper.Map<IEnumerable<OrderDto>>(orders);
         }
+
+        public async Task<bool> CancelOrderAsync(int userId, int orderId)
+        {
+            var order = await _orderRepo.GetByUserAndIdAsync(userId, orderId);
+
+            if (order == null || order.Status != "Pending")
+                return false;
+
+            order.Status = "Cancelled";
+            await _orderRepo.SaveChangesAsync();
+
+            return true;
+        }
+
+
+
+
     }
 }

@@ -10,11 +10,7 @@ namespace MyApp.Services.Interfaces
         Task<ProductDto?> UpdateAsync(int id, ProductDto dto);
         Task<bool> DeleteAsync(int id);
 
-		//Add products by category
-		Task<IEnumerable<ProductDto>> GetByCategoryAsync(string category);
-
-
-		// search method
-		Task<IEnumerable<ProductDto>> SearchAsync(string? name, string? category);
+        Task<IEnumerable<ProductDto>> SearchAsync(ProductFilterDto filter);
+        Task<IEnumerable<ProductDto>> GetByCategoryAsync(string category);
     }
 }

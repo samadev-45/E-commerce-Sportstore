@@ -56,5 +56,16 @@ namespace MyApp.Services.Implementations
             await _cartRepo.SaveChangesAsync();
             return true;
         }
+        public async Task<CartItemDto?> UpdateQuantityAsync(int userId, int productId, int quantity)
+        {
+            var item = await _cartRepo.GetCartItemAsync(userId, productId);
+            if (item == null) return null;
+
+            item.Quantity = quantity;
+            await _cartRepo.SaveChangesAsync();
+
+            return _mapper.Map<CartItemDto>(item);
+        }
+
     }
 }
