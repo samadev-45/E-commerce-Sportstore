@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MyApp.Common;
 
 namespace MyApp.Entities
 {
-    public class Product
+    public class Product:BaseEntity
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -11,6 +12,7 @@ namespace MyApp.Entities
         [Precision(18, 2)]
         public decimal Price { get; set; }
         public string ImageUrl { get; set; } = string.Empty;
+        public bool IsDeleted { get; set; } = false;
 
         // Navigation
         public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();

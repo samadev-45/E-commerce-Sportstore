@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-
+using MyApp.Common;
 namespace MyApp.Entities
 {
-    public class CartItem
+    public class CartItem :BaseEntity
     {
         public int Id { get; set; }
 

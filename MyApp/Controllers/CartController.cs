@@ -1,14 +1,13 @@
-﻿using MyApp.DTOs.Cart;
-using MyApp.Services.Interfaces;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using MyApp.Helpers;
+using MyApp.Services.Interfaces;
 
 namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // all cart actions require login
+    [Authorize]
     public class CartController : ControllerBase
     {
         private readonly ICartService _cartService;
@@ -18,46 +17,68 @@ namespace MyApp.Controllers
             _cartService = cartService;
         }
 
-        private int GetUserId()
+        // -----------------------------
+        // Get cart items for current user
+        // -----------------------------
+        [HttpGet("user")]
+        public async Task<IActionResult> GetCartForCurrentUser()
         {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userIdClaim = User.FindFirst("userId");
+            if (userIdClaim == null)
+                return this.BadResponse("Unauthorized", 401);
+
+            int userId = int.Parse(userIdClaim.Value);
+            var cart = await _cartService.GetUserCartAsync(userId);
+
+            return this.OkResponse(cart, "Cart retrieved successfully");
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetUserCart()
+        // -----------------------------
+        // Add product to cart
+        // -----------------------------
+        [HttpPost("user/add/{productId}")]
+        public async Task<IActionResult> AddToCart(int productId, [FromQuery] int quantity = 1)
         {
-            var cart = await _cartService.GetUserCartAsync(GetUserId());
-            return Ok(cart);
+            var userIdClaim = User.FindFirst("userId");
+            if (userIdClaim == null)
+                return this.BadResponse("Unauthorized", 401);
+
+            int userId = int.Parse(userIdClaim.Value);
+            await _cartService.AddToCartAsync(userId, productId, quantity);
+
+            return this.OkResponse<object>(null, "Product added to cart");
         }
 
-        [HttpPost]
-        public async Task<IActionResult> AddToCart(AddToCartDto dto)
-        {
-            var item = await _cartService.AddToCartAsync(GetUserId(), dto);
-            return Ok(item);
-        }
-
-        [HttpDelete("{productId}")]
+        // -----------------------------
+        // Remove product from cart
+        // -----------------------------
+        [HttpDelete("user/remove/{productId}")]
         public async Task<IActionResult> RemoveFromCart(int productId)
         {
-            var success = await _cartService.RemoveFromCartAsync(GetUserId(), productId);
-            if (!success) return NotFound();
-            return NoContent();
+            var userIdClaim = User.FindFirst("userId");
+            if (userIdClaim == null)
+                return this.BadResponse("Unauthorized", 401);
+
+            int userId = int.Parse(userIdClaim.Value);
+            await _cartService.RemoveFromCartAsync(userId, productId);
+
+            return this.OkResponse<object>(null, "Product removed from cart");
         }
 
-        [HttpPut("{productId}")]
-        public async Task<IActionResult> UpdateQuantity(int productId, [FromBody] UpdateCartQuantityDto dto)
+        // -----------------------------
+        // Update quantity of a product
+        // -----------------------------
+        [HttpPut("user/update/{productId}")]
+        public async Task<IActionResult> UpdateQuantity(int productId, [FromQuery] int quantity)
         {
-            if (dto.Quantity <= 0)
-                return BadRequest("Quantity must be greater than 0");
+            var userIdClaim = User.FindFirst("userId");
+            if (userIdClaim == null)
+                return this.BadResponse("Unauthorized", 401);
 
-            var updatedItem = await _cartService.UpdateQuantityAsync(GetUserId(), productId, dto.Quantity);
+            int userId = int.Parse(userIdClaim.Value);
+            await _cartService.UpdateQuantityAsync(userId, productId, quantity);
 
-            if (updatedItem == null)
-                return NotFound("Item not found in cart");
-
-            return Ok(updatedItem);
+            return this.OkResponse<object>(null, "Quantity updated");
         }
-
     }
 }

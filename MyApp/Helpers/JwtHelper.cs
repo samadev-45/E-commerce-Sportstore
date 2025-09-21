@@ -19,10 +19,10 @@ namespace MyApp.Helpers
 
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.Name ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role ?? "user")
+                new Claim("UserId", user.Id.ToString()),
+                new Claim("Email", user.Email),
+                new Claim("Name", user.Name ?? string.Empty),
+                new Claim("Role", user.Role )
             };
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));

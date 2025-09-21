@@ -1,22 +1,23 @@
-﻿using MyApp.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using MyApp.Data;
 using MyApp.Entities;
 using MyApp.Repositories.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace MyApp.Repositories.Implementations
 {
-    public class CartRepository : ICartRepository
+    public class CartRepository : GenericRepository<CartItem>, ICartRepository
     {
         private readonly AppDbContext _context;
-        public CartRepository(AppDbContext context)
+
+        public CartRepository(AppDbContext context) : base(context)
         {
             _context = context;
         }
 
-        public async Task<IEnumerable<CartItem>> GetUserCartAsync(int userId)
+        public async Task<IEnumerable<CartItem>> GetCartByUserIdAsync(int userId)
         {
             return await _context.CartItems
-                .Include(c => c.Product)
+                .Include(c => c.Product) // load product details
                 .Where(c => c.UserId == userId)
                 .ToListAsync();
         }
@@ -24,30 +25,12 @@ namespace MyApp.Repositories.Implementations
         public async Task<CartItem?> GetCartItemAsync(int userId, int productId)
         {
             return await _context.CartItems
-                .Include(c => c.Product)
                 .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
         }
 
-        public async Task AddAsync(CartItem item)
+        public async Task RemoveAsync(CartItem cartItem)
         {
-            await _context.CartItems.AddAsync(item);
-        }
-
-        public async Task RemoveAsync(CartItem item)
-        {
-            _context.CartItems.Remove(item);
-        }
-
-      
-        public async Task ClearCartAsync(int userId)
-        {
-            var items = _context.CartItems.Where(c => c.UserId == userId);
-            _context.CartItems.RemoveRange(items);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task SaveChangesAsync()
-        {
+            _context.CartItems.Remove(cartItem);
             await _context.SaveChangesAsync();
         }
     }

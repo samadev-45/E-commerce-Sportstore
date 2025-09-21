@@ -1,74 +1,93 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using MyApp.DTOs.Orders;
 using MyApp.Entities;
 using MyApp.Repositories.Interfaces;
 using MyApp.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 
 namespace MyApp.Services.Implementations
 {
-    public class OrderService : IOrderService
+    public class OrderService : GenericService<Order, OrderDto>, IOrderService
     {
-        private readonly IOrderRepository _orderRepo;
-        private readonly ICartRepository _cartRepo;
-        private readonly IMapper _mapper;
+        private readonly IOrderRepository _orderRepository;
+        private readonly ICartRepository _cartRepository;
+        private readonly IProductRepository _productRepository;
 
-        public OrderService(IOrderRepository orderRepo, ICartRepository cartRepo, IMapper mapper)
+        public OrderService(
+            IOrderRepository orderRepository,
+            ICartRepository cartRepository,
+            IProductRepository productRepository,
+            IMapper mapper,
+            IHttpContextAccessor httpContextAccessor
+        ) : base(orderRepository, mapper, httpContextAccessor)
         {
-            _orderRepo = orderRepo;
-            _cartRepo = cartRepo;
-            _mapper = mapper;
+            _orderRepository = orderRepository;
+            _cartRepository = cartRepository;
+            _productRepository = productRepository;
         }
 
-        public async Task<OrderDto> CreateOrderAsync(int userId, CreateOrderDto dto)
+        public async Task<OrderDto> CreateOrderAsync(int userId)
         {
-            var cartItems = await _cartRepo.GetUserCartAsync(userId);  
+            var cartItems = await _cartRepository.GetCartByUserIdAsync(userId);
             if (!cartItems.Any())
-                throw new Exception("Cart is empty. Add products before checkout.");
+                throw new InvalidOperationException("Cart is empty.");
 
             var order = new Order
             {
                 UserId = userId,
-                Address = dto.Address,
-                Status = "Pending",
                 OrderDate = DateTime.UtcNow,
-                OrderItems = cartItems.Select(c => new OrderItem
-                {
-                    ProductId = c.ProductId,
-                    Quantity = c.Quantity,
-                    Price = c.Product.Price
-                }).ToList()
+                Status = "Pending",
+                OrderItems = new List<OrderItem>()
             };
 
-            await _orderRepo.AddAsync(order);
-            await _orderRepo.SaveChangesAsync();
+            decimal total = 0;
 
-            await _cartRepo.ClearCartAsync(userId); 
+            foreach (var cartItem in cartItems)
+            {
+                var product = await _productRepository.GetByIdAsync(cartItem.ProductId);
+                if (product == null)
+                    throw new InvalidOperationException($"Product {cartItem.ProductId} not found.");
+
+                var orderItem = new OrderItem
+                {
+                    ProductId = product.Id,
+                    Quantity = cartItem.Quantity,
+                    UnitPrice = product.Price
+                };
+
+                order.OrderItems.Add(orderItem);
+                total += product.Price * cartItem.Quantity;
+            }
+
+            order.TotalPrice = total;
+
+            await _orderRepository.AddAsync(order);
+            await _orderRepository.SaveChangesAsync();
+
+            foreach (var item in cartItems)
+            {
+                await _cartRepository.DeleteAsync(item);
+            }
+            await _cartRepository.SaveChangesAsync();
 
             return _mapper.Map<OrderDto>(order);
         }
 
         public async Task<IEnumerable<OrderDto>> GetOrdersByUserAsync(int userId)
         {
-            var orders = await _orderRepo.GetByUserAsync(userId);
+            var orders = await _orderRepository.GetOrdersByUserIdAsync(userId);
             return _mapper.Map<IEnumerable<OrderDto>>(orders);
         }
 
-        public async Task<bool> CancelOrderAsync(int userId, int orderId)
+        public async Task CancelOrderAsync(int orderId)
         {
-            var order = await _orderRepo.GetByUserAndIdAsync(userId, orderId);
-
-            if (order == null || order.Status != "Pending")
-                return false;
+            var order = await _orderRepository.GetByIdAsync(orderId);
+            if (order == null)
+                throw new KeyNotFoundException("Order not found.");
 
             order.Status = "Cancelled";
-            await _orderRepo.SaveChangesAsync();
-
-            return true;
+            await _orderRepository.UpdateAsync(order);
+            await _orderRepository.SaveChangesAsync();
         }
-
-
-
-
     }
 }

@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MyApp.Common;
 
 namespace MyApp.Entities
 {
-    public class OrderItem
+    public class OrderItem :BaseEntity
     {
         public int Id { get; set; }
 
@@ -15,5 +16,6 @@ namespace MyApp.Entities
         public int Quantity { get; set; }
         [Precision(18, 2)]
         public decimal Price { get; set; } // price at purchase time
+        public decimal UnitPrice { get; set; }
     }
 }

@@ -1,13 +1,11 @@
 ﻿using MyApp.DTOs.Cart;
+using MyApp.Entities;
+using MyApp.Services.Interfaces;
 
-namespace MyApp.Services.Interfaces
+public interface ICartService : IGenericService<CartItem, CartItemDto>
 {
-    public interface ICartService
-    {
-        Task<IEnumerable<CartItemDto>> GetUserCartAsync(int userId);
-        Task<CartItemDto> AddToCartAsync(int userId, AddToCartDto dto);
-        Task<bool> RemoveFromCartAsync(int userId, int productId);
-        Task<CartItemDto?> UpdateQuantityAsync(int userId, int productId, int quantity);
-
-    }
+    Task<IEnumerable<CartItemDto>> GetUserCartAsync(int userId);
+    Task AddToCartAsync(int userId, int productId, int quantity);
+    Task RemoveFromCartAsync(int userId, int productId);
+    Task UpdateQuantityAsync(int userId, int productId, int quantity);
 }

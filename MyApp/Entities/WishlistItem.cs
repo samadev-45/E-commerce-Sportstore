@@ -1,6 +1,8 @@
-﻿namespace MyApp.Entities
+﻿using MyApp.Common;
+
+namespace MyApp.Entities
 {
-    public class WishlistItem
+    public class WishlistItem:BaseEntity
     {
         public int Id { get; set; }
 

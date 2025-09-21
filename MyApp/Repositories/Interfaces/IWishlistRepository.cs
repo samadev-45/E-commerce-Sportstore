@@ -2,12 +2,10 @@
 
 namespace MyApp.Repositories.Interfaces
 {
-    public interface IWishlistRepository
+    public interface IWishlistRepository : IGenericRepository<WishlistItem>
     {
-        Task<IEnumerable<WishlistItem>> GetUserWishlistAsync(int userId);
+        Task<IEnumerable<WishlistItem>> GetWishlistByUserIdAsync(int userId);
         Task<WishlistItem?> GetWishlistItemAsync(int userId, int productId);
-        Task AddAsync(WishlistItem item);
-        Task RemoveAsync(WishlistItem item);
-        Task SaveChangesAsync();
+        Task RemoveAsync(WishlistItem wishlistItem);
     }
 }

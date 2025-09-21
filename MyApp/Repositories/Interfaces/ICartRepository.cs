@@ -2,13 +2,10 @@
 
 namespace MyApp.Repositories.Interfaces
 {
-    public interface ICartRepository
+    public interface ICartRepository : IGenericRepository<CartItem>
     {
-        Task<IEnumerable<CartItem>> GetUserCartAsync(int userId);
+        Task<IEnumerable<CartItem>> GetCartByUserIdAsync(int userId);
         Task<CartItem?> GetCartItemAsync(int userId, int productId);
-        Task AddAsync(CartItem item);
-        Task RemoveAsync(CartItem item);
-        Task ClearCartAsync(int userId);  
-        Task SaveChangesAsync();
+        Task RemoveAsync(CartItem cartItem);
     }
 }

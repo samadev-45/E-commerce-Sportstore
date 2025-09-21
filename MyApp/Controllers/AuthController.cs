@@ -1,4 +1,6 @@
-﻿using MyApp.DTOs.Auth;
+﻿using MyApp.DTOs;
+using MyApp.DTOs.Auth;
+using MyApp.Helpers;
 using MyApp.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,26 +17,38 @@ namespace MyApp.Controllers
             _auth = auth;
         }
 
+        // -----------------------------
+        // Registration (no JWT)
+        // -----------------------------
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return this.BadResponse("Invalid input data");
 
             var result = await _auth.RegisterAsync(dto);
-            if (result == null) return BadRequest(new { message = "Email already exists." });
 
-            return Ok(result);
+            if (result == null)
+                return this.OkResponse<object>(null, "Registration successful. Please log in.");
+
+            return this.OkResponse(result, "User created successfully");
         }
 
+        // -----------------------------
+        // Login (generate JWT)
+        // -----------------------------
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return this.BadResponse("Invalid input data");
 
-            var result = await _auth.LoginAsync(dto);
-            if (result == null) return Unauthorized(new { message = "Invalid credentials or user blocked." });
+            var loginResult = await _auth.LoginAsync(dto);
 
-            return Ok(result);
+            if (loginResult == null)
+                return this.BadResponse("Invalid credentials or user blocked", 401);
+
+            return this.OkResponse(loginResult, "Login successful");
         }
     }
 }

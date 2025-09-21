@@ -1,34 +1,35 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyApp.Helpers;
 using MyApp.Services.Interfaces;
-using System.Security.Claims;
 
 namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // user must be logged in
+    [Authorize]
     public class UserController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        private readonly IUserService _userService;
 
-        public UserController(IAuthService authService)
+        public UserController(IUserService userService)
         {
-            _authService = authService;
+            _userService = userService;
         }
 
         private int GetUserId()
         {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            return int.Parse(User.FindFirst("userId")!.Value);
         }
 
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var profile = await _authService.GetProfileAsync(GetUserId());
-            if (profile == null) return NotFound("User not found");
+            var profile = await _userService.GetUserProfileAsync(GetUserId());
+            if (profile == null)
+                return this.BadResponse("User profile not found", 404);
 
-            return Ok(profile);
+            return this.OkResponse(profile, "Profile retrieved successfully");
         }
     }
 }

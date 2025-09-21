@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using MyApp.DTOs.Products;
 using MyApp.Entities;
 using MyApp.Repositories.Interfaces;
@@ -6,85 +8,78 @@ using MyApp.Services.Interfaces;
 
 namespace MyApp.Services.Implementations
 {
-    public class ProductService : IProductService
+    public class ProductService : GenericService<Product, ProductDto>, IProductService
     {
-        private readonly IProductRepository _repository;
+        private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
 
-        public ProductService(IProductRepository repository, IMapper mapper)
+        public ProductService(
+            IProductRepository productRepository,
+            IMapper mapper,
+            IHttpContextAccessor httpContextAccessor
+        ) : base(productRepository, mapper, httpContextAccessor)
         {
-            _repository = repository;
+            _productRepository = productRepository;
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<ProductDto>> GetAllAsync()
+        // Override GetAllAsync -> exclude deleted products
+        public override async Task<IEnumerable<ProductDto>> GetAllAsync()
         {
-            var products = await _repository.GetAllAsync();
+            var products = await _productRepository.Query()
+                                                   .Where(p => !p.IsDeleted)
+                                                   .ToListAsync();
             return _mapper.Map<IEnumerable<ProductDto>>(products);
         }
 
-        public async Task<ProductDto?> GetByIdAsync(int id)
+        //  Override DeleteAsync -> soft delete
+        public override async Task<bool> DeleteAsync(int id)
         {
-            var product = await _repository.GetByIdAsync(id);
-            return _mapper.Map<ProductDto?>(product);
-        }
+            var product = await _productRepository.GetByIdAsync(id);
+            if (product == null || product.IsDeleted)
+                return false;
 
-        public async Task<ProductDto> AddAsync(ProductDto dto)
-        {
-            var product = _mapper.Map<Product>(dto);
-            await _repository.AddAsync(product);
-            await _repository.SaveChangesAsync();
+            product.IsDeleted = true;
+            await _productRepository.UpdateAsync(product);
+            await _productRepository.SaveChangesAsync();
 
-            return _mapper.Map<ProductDto>(product);
-        }
-
-        public async Task<ProductDto?> UpdateAsync(int id, ProductDto dto)
-        {
-            var product = await _repository.GetByIdAsync(id);
-            if (product == null) return null;
-
-            _mapper.Map(dto, product); // updates entity fields
-            await _repository.UpdateAsync(product);
-            await _repository.SaveChangesAsync();
-
-            return _mapper.Map<ProductDto>(product);
-        }
-
-        public async Task<bool> DeleteAsync(int id)
-        {
-            var product = await _repository.GetByIdAsync(id);
-            if (product == null) return false;
-
-            await _repository.DeleteAsync(product);
-            await _repository.SaveChangesAsync();
             return true;
         }
 
-        //  Search + filter
+        //  Search with filters and excluding deleted products
         public async Task<IEnumerable<ProductDto>> SearchAsync(ProductFilterDto filter)
         {
-            var products = await _repository.GetAllAsync();
+            var query = _productRepository.Query().AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(filter.Name))
-                products = products.Where(p => p.Name.Contains(filter.Name, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(p => p.Name.Contains(filter.Name));
 
             if (!string.IsNullOrWhiteSpace(filter.Category))
-                products = products.Where(p => p.Category.Equals(filter.Category, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(p => p.Category.Contains(filter.Category));
 
             if (filter.MinPrice.HasValue)
-                products = products.Where(p => p.Price >= filter.MinPrice.Value);
+                query = query.Where(p => p.Price >= filter.MinPrice.Value);
 
             if (filter.MaxPrice.HasValue)
-                products = products.Where(p => p.Price <= filter.MaxPrice.Value);
+                query = query.Where(p => p.Price <= filter.MaxPrice.Value);
 
-            return _mapper.Map<IEnumerable<ProductDto>>(products);
+            query = query.Where(p => !p.IsDeleted);
+
+            return _mapper.Map<IEnumerable<ProductDto>>(await query.ToListAsync());
         }
 
-        public async Task<IEnumerable<ProductDto>> GetByCategoryAsync(string category)
+        //  (Optional) Restore product
+        public async Task<bool> RestoreAsync(int id)
         {
-            var products = await _repository.GetAllAsync();
-            products = products.Where(p => p.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
-            return _mapper.Map<IEnumerable<ProductDto>>(products);
+            var product = await _productRepository.GetByIdAsync(id);
+            if (product == null || !product.IsDeleted)
+                return false;
+
+            product.IsDeleted = false;
+            await _productRepository.UpdateAsync(product);
+            await _productRepository.SaveChangesAsync();
+
+            return true;
         }
     }
 }

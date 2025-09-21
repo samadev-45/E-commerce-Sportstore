@@ -1,58 +1,53 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MyApp.DTOs.Orders;
+using MyApp.Helpers;
 using MyApp.Services.Interfaces;
-using System.Security.Claims;
 
 namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Only logged-in users can order
-    public class OrdersController : ControllerBase
+    [Authorize]
+    public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
 
-        public OrdersController(IOrderService orderService)
+        public OrderController(IOrderService orderService)
         {
             _orderService = orderService;
         }
 
-        // Place a new order
-        [HttpPost]
-        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
+        [HttpPost("user/create")]
+        public async Task<IActionResult> CreateOrder()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var userIdClaim = User.FindFirst("userId");
+            if (userIdClaim == null)
+                return this.BadResponse("Unauthorized", 401);
 
-            var order = await _orderService.CreateOrderAsync(userId, dto);
+            int userId = int.Parse(userIdClaim.Value);
+            var order = await _orderService.CreateOrderAsync(userId);
 
-            return CreatedAtAction(nameof(GetOrdersByUser), new { userId = userId }, order);
+            return this.OkResponse(order, "Order created successfully");
         }
 
-        // Get orders of logged-in user
-        [HttpGet("my-orders")]
-        public async Task<IActionResult> GetOrdersByUser()
+        [HttpGet("user")]
+        public async Task<IActionResult> GetOrdersForCurrentUser()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var userIdClaim = User.FindFirst("userId");
+            if (userIdClaim == null)
+                return this.BadResponse("Unauthorized", 401);
 
+            int userId = int.Parse(userIdClaim.Value);
             var orders = await _orderService.GetOrdersByUserAsync(userId);
 
-            return Ok(orders);
+            return this.OkResponse(orders, "Orders retrieved successfully");
         }
 
-        //Cancel order
-        [HttpPut("{id}/cancel")]
-        public async Task<IActionResult> CancelOrder(int id)
+        [HttpPut("cancel/{orderId}")]
+        public async Task<IActionResult> CancelOrder(int orderId)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            var result = await _orderService.CancelOrderAsync(userId, id);
-
-            if (!result)
-                return BadRequest("Order cannot be cancelled or not found");
-
-            return Ok(new { message = "Order cancelled successfully" });
+            await _orderService.CancelOrderAsync(orderId);
+            return this.OkResponse<object>(null, "Order cancelled successfully");
         }
-
     }
 }

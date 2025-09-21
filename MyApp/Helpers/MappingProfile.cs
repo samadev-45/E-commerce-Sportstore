@@ -13,7 +13,9 @@ namespace MyApp.Helpers
         public MappingProfile()
         {
             // Product mappings
-            CreateMap<Product, ProductDto>().ReverseMap();
+            CreateMap<Product, ProductDto>(); // For GET requests (read-only)
+            CreateMap<ProductDto, Product>()  // For POST/PUT (write)
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
             CreateMap<ProductFilterDto, Product>();
 
             // Cart mappings
@@ -29,13 +31,13 @@ namespace MyApp.Helpers
             CreateMap<AddToWishlistDto, WishlistItem>();
 
             // Orders
-            CreateMap<Order, OrderDto>()
-                .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems));
-
+            CreateMap<Order, OrderDto>();
             CreateMap<OrderItem, OrderItemDto>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
+                .ForMember(dest => dest.ProductName,
+                           opt => opt.MapFrom(src => src.Product.Name));
 
             CreateMap<RegisterDto, User>();
+            CreateMap<User, UserProfileDto>();
         }
     }
 }

@@ -1,12 +1,12 @@
 ﻿using MyApp.DTOs.Orders;
+using MyApp.Entities;
 
 namespace MyApp.Services.Interfaces
 {
-    public interface IOrderService
+    public interface IOrderService : IGenericService<Order, OrderDto>
     {
-        Task<OrderDto> CreateOrderAsync(int userId, CreateOrderDto dto);
+        Task<OrderDto> CreateOrderAsync(int userId);
         Task<IEnumerable<OrderDto>> GetOrdersByUserAsync(int userId);
-        Task<bool> CancelOrderAsync(int userId, int orderId);
-
+        Task CancelOrderAsync(int orderId);
     }
 }

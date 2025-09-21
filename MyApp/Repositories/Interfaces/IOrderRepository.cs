@@ -2,13 +2,8 @@
 
 namespace MyApp.Repositories.Interfaces
 {
-    public interface IOrderRepository
+    public interface IOrderRepository : IGenericRepository<Order>
     {
-        Task AddAsync(Order order);
-        Task<Order?> GetByIdAsync(int id);
-        Task<IEnumerable<Order>> GetByUserAsync(int userId);
-        Task<Order?> GetByUserAndIdAsync(int userId, int orderId);
-
-        Task SaveChangesAsync();
+        Task<IEnumerable<Order>> GetOrdersByUserIdAsync(int userId);
     }
 }

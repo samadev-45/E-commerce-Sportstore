@@ -27,24 +27,26 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // DEPENDENCY INJECTION
 
-// Auth
-builder.Services.AddScoped<IAuthService, AuthService>();
-
-// Product
+// Repositories
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IProductService, ProductService>();
-
-// Cart
 builder.Services.AddScoped<ICartRepository, CartRepository>();
-builder.Services.AddScoped<ICartService, CartService>();
-
-// Wishlist
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
-builder.Services.AddScoped<IWishlistService, WishlistService>();
-
-// Order
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+
+
+builder.Services.AddHttpContextAccessor();
+
+
+
 
 
 // JWT AUTHENTICATION
@@ -120,6 +122,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(); // /swagger
 }
+app.UseMiddleware<MyApp.Middleware.ExceptionMiddleware>();
 
 // Seed database if needed
 using (var scope = app.Services.CreateScope())

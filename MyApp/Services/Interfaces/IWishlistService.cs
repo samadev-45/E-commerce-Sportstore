@@ -1,13 +1,13 @@
-﻿
-using MyApp.DTOs.Wishlist;
+﻿using MyApp.DTOs.Wishlist;
+using MyApp.Entities;
 
 namespace MyApp.Services.Interfaces
 {
-    public interface IWishlistService
+    public interface IWishlistService : IGenericService<WishlistItem, WishlistItemDto>
     {
         Task<IEnumerable<WishlistItemDto>> GetUserWishlistAsync(int userId);
-        Task<WishlistItemDto> AddToWishlistAsync(int userId, AddToWishlistDto dto);
-        Task<bool> RemoveFromWishlistAsync(int userId, int productId);
-        Task<bool> MoveToCartAsync(int userId, int productId);
+        Task AddToWishlistAsync(int userId, int productId);
+        Task RemoveFromWishlistAsync(int userId, int productId);
+        Task MoveToCartAsync(int userId, int productId);
     }
 }

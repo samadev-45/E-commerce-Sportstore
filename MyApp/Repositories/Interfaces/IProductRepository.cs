@@ -2,14 +2,9 @@
 
 namespace MyApp.Repositories.Interfaces
 {
-    public interface IProductRepository
+    public interface IProductRepository : IGenericRepository<Product>
     {
-        Task<IEnumerable<Product>> GetAllAsync();
-        Task<Product?> GetByIdAsync(int id);
-        Task AddAsync(Product product);
-        Task UpdateAsync(Product product);
-        Task DeleteAsync(Product product);
-
-        Task SaveChangesAsync();
+        // Add product-specific method signatures here if needed
+        // Example: Task<IEnumerable<Product>> GetByCategoryAsync(string category);
     }
 }

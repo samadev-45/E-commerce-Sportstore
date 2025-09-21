@@ -1,16 +1,11 @@
 ﻿using MyApp.DTOs.Products;
+using MyApp.Entities;
 
 namespace MyApp.Services.Interfaces
 {
-    public interface IProductService
+    public interface IProductService : IGenericService<Product, ProductDto>
     {
-        Task<IEnumerable<ProductDto>> GetAllAsync();
-        Task<ProductDto?> GetByIdAsync(int id);
-        Task<ProductDto> AddAsync(ProductDto dto);
-        Task<ProductDto?> UpdateAsync(int id, ProductDto dto);
-        Task<bool> DeleteAsync(int id);
-
+        // Accept a filter DTO instead of just a string
         Task<IEnumerable<ProductDto>> SearchAsync(ProductFilterDto filter);
-        Task<IEnumerable<ProductDto>> GetByCategoryAsync(string category);
     }
 }

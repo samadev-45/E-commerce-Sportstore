@@ -8,7 +8,7 @@ namespace MyApp.Entities
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;  // stored with BCrypt
-        public string Role { get; set; } = "User"; // default User, can extend to Admin
+        public string Role { get; set; } = "User";
 
         public bool IsBlock { get; set; } = false;
 
