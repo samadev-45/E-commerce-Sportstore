@@ -46,7 +46,7 @@ namespace MyApp.Controllers
             int userId = int.Parse(userIdClaim.Value);
             await _cartService.AddToCartAsync(userId, productId, quantity);
 
-            return this.OkResponse<object>(null, "Product added to cart");
+            return this.OkResponse<object?>(null, "Product added to cart");
         }
 
         // -----------------------------
@@ -62,7 +62,7 @@ namespace MyApp.Controllers
             int userId = int.Parse(userIdClaim.Value);
             await _cartService.RemoveFromCartAsync(userId, productId);
 
-            return this.OkResponse<object>(null, "Product removed from cart");
+            return this.OkResponse<object?>(null, "Product removed from cart");
         }
 
         // -----------------------------
@@ -78,7 +78,7 @@ namespace MyApp.Controllers
             int userId = int.Parse(userIdClaim.Value);
             await _cartService.UpdateQuantityAsync(userId, productId, quantity);
 
-            return this.OkResponse<object>(null, "Quantity updated");
+            return this.OkResponse<object?>(null, "Quantity updated");
         }
     }
 }

@@ -40,7 +40,7 @@ namespace MyApp.Controllers
             int userId = int.Parse(userIdClaim.Value);
             await _wishlistService.AddToWishlistAsync(userId, productId);
 
-            return this.OkResponse<object>(null, "Product added to wishlist");
+            return this.OkResponse<object?>(null, "Product added to wishlist");
         }
 
         [HttpDelete("user/remove/{productId}")]
@@ -53,7 +53,7 @@ namespace MyApp.Controllers
             int userId = int.Parse(userIdClaim.Value);
             await _wishlistService.RemoveFromWishlistAsync(userId, productId);
 
-            return this.OkResponse<object>(null, "Product removed from wishlist");
+            return this.OkResponse<object?>(null, "Product removed from wishlist");
         }
 
         [HttpPost("user/move-to-cart/{productId}")]
@@ -66,7 +66,7 @@ namespace MyApp.Controllers
             int userId = int.Parse(userIdClaim.Value);
             await _wishlistService.MoveToCartAsync(userId, productId);
 
-            return this.OkResponse<object>(null, "Product moved to cart");
+            return this.OkResponse<object?>(null, "Product moved to cart");
         }
     }
 }

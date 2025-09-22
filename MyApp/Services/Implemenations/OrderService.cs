@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyApp.DTOs.Orders;
 using MyApp.Entities;
 using MyApp.Repositories.Interfaces;
@@ -26,7 +27,11 @@ namespace MyApp.Services.Implementations
             _productRepository = productRepository;
         }
 
-        public async Task<OrderDto> CreateOrderAsync(int userId)
+        // -----------------------------
+        // USER SIDE
+        // -----------------------------
+
+        public async Task<OrderDto> CreateOrderAsync(int userId, CreateOrderDto dto)
         {
             var cartItems = await _cartRepository.GetCartByUserIdAsync(userId);
             if (!cartItems.Any())
@@ -35,6 +40,7 @@ namespace MyApp.Services.Implementations
             var order = new Order
             {
                 UserId = userId,
+                Address = dto.Address,
                 OrderDate = DateTime.UtcNow,
                 Status = "Pending",
                 OrderItems = new List<OrderItem>()
@@ -52,11 +58,12 @@ namespace MyApp.Services.Implementations
                 {
                     ProductId = product.Id,
                     Quantity = cartItem.Quantity,
-                    UnitPrice = product.Price
+                    UnitPrice = product.Price,
+                    Price = product.Price * cartItem.Quantity
                 };
 
                 order.OrderItems.Add(orderItem);
-                total += product.Price * cartItem.Quantity;
+                total += orderItem.Price;
             }
 
             order.TotalPrice = total;
@@ -64,10 +71,10 @@ namespace MyApp.Services.Implementations
             await _orderRepository.AddAsync(order);
             await _orderRepository.SaveChangesAsync();
 
+            // Clear cart
             foreach (var item in cartItems)
-            {
                 await _cartRepository.DeleteAsync(item);
-            }
+
             await _cartRepository.SaveChangesAsync();
 
             return _mapper.Map<OrderDto>(order);
@@ -86,6 +93,47 @@ namespace MyApp.Services.Implementations
                 throw new KeyNotFoundException("Order not found.");
 
             order.Status = "Cancelled";
+            await _orderRepository.UpdateAsync(order);
+            await _orderRepository.SaveChangesAsync();
+        }
+
+        // -----------------------------
+        // ADMIN SIDE
+        // -----------------------------
+
+        public async Task<IEnumerable<AdminOrderDto>> GetAllOrdersForAdminAsync(string? search, string? status)
+        {
+            var query = _orderRepository.Query()
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .AsQueryable();
+
+            // Search by OrderId or UserName
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(o =>
+                    o.Id.ToString().Contains(search) ||
+                    o.User.Name.Contains(search));
+            }
+
+            //  Filter by status
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(o => o.Status == status);
+            }
+
+            var orders = await query.ToListAsync();
+            return _mapper.Map<IEnumerable<AdminOrderDto>>(orders);
+        }
+
+        public async Task UpdateOrderStatusAsync(int orderId, string status)
+        {
+            var order = await _orderRepository.GetByIdAsync(orderId);
+            if (order == null)
+                throw new KeyNotFoundException("Order not found.");
+
+            order.Status = status;
             await _orderRepository.UpdateAsync(order);
             await _orderRepository.SaveChangesAsync();
         }

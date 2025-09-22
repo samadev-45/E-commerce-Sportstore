@@ -29,13 +29,13 @@ namespace MyApp.Controllers
             var result = await _auth.RegisterAsync(dto);
 
             if (result == null)
-                return this.OkResponse<object>(null, "Registration successful. Please log in.");
+                return this.OkResponse<object?>(null, "Registration successful. Please log in.");
 
             return this.OkResponse(result, "User created successfully");
         }
 
         // -----------------------------
-        // Login (generate JWT)
+        // Login (generate JWT + Refresh Token)
         // -----------------------------
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
@@ -49,6 +49,40 @@ namespace MyApp.Controllers
                 return this.BadResponse("Invalid credentials or user blocked", 401);
 
             return this.OkResponse(loginResult, "Login successful");
+        }
+
+        // -----------------------------
+        // Refresh JWT using Refresh Token
+        // -----------------------------
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.RefreshToken))
+                return this.BadResponse("Refresh token is required");
+
+            var result = await _auth.RefreshAsync(dto.RefreshToken);
+
+            if (result == null)
+                return this.BadResponse("Invalid or expired refresh token", 401);
+
+            return this.OkResponse(result, "Token refreshed successfully");
+        }
+
+        // -----------------------------
+        // Revoke Refresh Token (Logout)
+        // -----------------------------
+        [HttpPost("revoke")]
+        public async Task<IActionResult> Revoke([FromBody] RevokeTokenDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.RefreshToken))
+                return this.BadResponse("Refresh token is required");
+
+            var success = await _auth.RevokeAsync(dto.RefreshToken);
+
+            if (!success)
+                return this.BadResponse("Invalid or already revoked token");
+
+            return this.OkResponse<object?>(null, "Token revoked successfully");
         }
     }
 }

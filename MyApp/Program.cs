@@ -9,6 +9,7 @@ using MyApp.Repositories.Implementations;
 using MyApp.Repositories.Interfaces;
 using MyApp.Services.Implementations;
 using MyApp.Services.Interfaces;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,6 +43,9 @@ builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
+builder.Services.AddScoped<IAdminService, AdminService>();
+
+
 
 builder.Services.AddHttpContextAccessor();
 
@@ -69,7 +73,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwt["Issuer"],
         ValidAudience = jwt["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+        RoleClaimType = ClaimTypes.Role
+
     };
 });
 

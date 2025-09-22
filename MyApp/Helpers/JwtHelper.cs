@@ -22,7 +22,8 @@ namespace MyApp.Helpers
                 new Claim("UserId", user.Id.ToString()),
                 new Claim("Email", user.Email),
                 new Claim("Name", user.Name ?? string.Empty),
-                new Claim("Role", user.Role )
+                new Claim(ClaimTypes.Role, user.Role == "admin" ? "Admin" : user.Role ?? "User")
+
             };
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));

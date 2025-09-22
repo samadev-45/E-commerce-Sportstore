@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using MyApp.DTOs.Admin;
 using MyApp.DTOs.Auth;
 using MyApp.DTOs.Cart;
 using MyApp.DTOs.Orders;
@@ -12,10 +13,11 @@ namespace MyApp.Helpers
     {
         public MappingProfile()
         {
-            // Product mappings
             CreateMap<Product, ProductDto>(); // For GET requests (read-only)
             CreateMap<ProductDto, Product>()  // For POST/PUT (write)
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
+            CreateMap<ProductCreateDto, Product>();  // <--- ADD THIS
+            CreateMap<ProductUpdateDto, Product>();  // <--- ADD THIS
             CreateMap<ProductFilterDto, Product>();
 
             // Cart mappings
@@ -36,8 +38,23 @@ namespace MyApp.Helpers
                 .ForMember(dest => dest.ProductName,
                            opt => opt.MapFrom(src => src.Product.Name));
 
+            // Map Order -> AdminOrderDto
+            CreateMap<Order, AdminOrderDto>()
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => $"order_{src.Id}"))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.Name))
+                .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User.Email))
+                .ForMember(dest => dest.Time, opt => opt.MapFrom(src => src.OrderDate));
+
+            // Map OrderItem -> AdminOrderItemDto
+            CreateMap<OrderItem, AdminOrderItemDto>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice));
+
             CreateMap<RegisterDto, User>();
             CreateMap<User, UserProfileDto>();
+
+            CreateMap<User, UserDto>()
+                .ForMember(dest => dest.IsBlocked, opt => opt.MapFrom(src => src.IsBlock));
         }
     }
 }
