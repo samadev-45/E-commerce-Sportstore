@@ -29,25 +29,39 @@ namespace MyApp.Data
                 .IsUnique();
 
             // Relationships
+
+            // User -> CartItems
             modelBuilder.Entity<User>()
                 .HasMany(u => u.CartItems)
                 .WithOne(c => c.User)
-                .HasForeignKey(c => c.UserId);
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // User -> WishlistItems
             modelBuilder.Entity<User>()
                 .HasMany(u => u.WishlistItems)
                 .WithOne(w => w.User)
-                .HasForeignKey(w => w.UserId);
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // User -> Orders
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Orders)
                 .WithOne(o => o.User)
-                .HasForeignKey(o => o.UserId);
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // Order -> OrderItems
             modelBuilder.Entity<Order>()
                 .HasMany(o => o.OrderItems)
                 .WithOne(oi => oi.Order)
-                .HasForeignKey(oi => oi.OrderId);
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Optional: configure Product properties
+            modelBuilder.Entity<Product>()
+                .Property(p => p.ImageUrl)
+                .HasMaxLength(500);
         }
     }
 }

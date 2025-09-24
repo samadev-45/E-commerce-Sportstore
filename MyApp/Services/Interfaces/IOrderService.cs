@@ -1,13 +1,19 @@
 ﻿using MyApp.DTOs.Orders;
 using MyApp.Entities;
-using MyApp.Services.Interfaces;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-public interface IOrderService : IGenericService<Order, OrderDto>
+namespace MyApp.Services.Interfaces
 {
-    Task<OrderDto> CreateOrderAsync(int userId, CreateOrderDto dto);
-    Task<IEnumerable<OrderDto>> GetOrdersByUserAsync(int userId);
-    Task CancelOrderAsync(int orderId);
-    Task<IEnumerable<AdminOrderDto>> GetAllOrdersForAdminAsync(string? search = null, string? status = null);
-    Task UpdateOrderStatusAsync(int orderId, string status);
+    public interface IOrderService : IGenericService<Order, OrderDto>
+    {
+        Task<OrderDto> CreateOrderAsync(int userId, CreateOrderDto dto);
+        Task<IEnumerable<OrderDto>> GetOrdersByUserAsync(int userId);
+        Task CancelOrderAsync(int orderId);
+        Task<IEnumerable<AdminOrderDto>> GetAllOrdersForAdminAsync(string? search = null, string? status = null);
+        Task<string?> UpdateOrderStatusAsync(int orderId, int statusId, string? modifiedByUserId = null);
 
+        // Test mode online payment
+        Task<object> PayOnlineAsync(int orderId);
+    }
 }

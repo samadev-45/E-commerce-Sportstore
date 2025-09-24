@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.DTOs.Orders;
+using MyApp.Entities;
 using MyApp.Helpers;
 using MyApp.Services.Interfaces;
+using System.Threading.Tasks;
 
 namespace MyApp.Controllers
 {
@@ -12,10 +15,12 @@ namespace MyApp.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IMapper _mapper;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(IOrderService orderService, IMapper mapper)
         {
             _orderService = orderService;
+            _mapper = mapper;
         }
 
         // -----------------------------
@@ -30,10 +35,12 @@ namespace MyApp.Controllers
 
             int userId = int.Parse(userIdClaim.Value);
 
+            // Only send address & paymentType; items come from cart
             var order = await _orderService.CreateOrderAsync(userId, dto);
 
             return this.OkResponse(order, "Order created successfully");
         }
+
 
         // -----------------------------
         // Get all orders for current user

@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using MyApp.Common;
 using MyApp.DTOs.Orders;
 using MyApp.Services.Interfaces;
+using System.Security.Claims;
 
 namespace MyApp.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/orders")]
-    [Authorize(Roles = "Admin")] 
+    [Authorize(Roles = "Admin")]
     public class AdminOrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -19,12 +20,10 @@ namespace MyApp.Controllers.Admin
         }
 
         // -----------------------------
-        // Get all orders (with search & filter)
+        // Get all orders (search & filter)
         // -----------------------------
         [HttpGet]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] string? search,
-            [FromQuery] string? status)
+        public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? status)
         {
             var orders = await _orderService.GetAllOrdersForAdminAsync(search, status);
             var response = new ApiResponse<IEnumerable<AdminOrderDto>>(orders, true, 200, "Orders retrieved successfully");
@@ -37,20 +36,66 @@ namespace MyApp.Controllers.Admin
         [HttpPut("{orderId}/deliver")]
         public async Task<IActionResult> MarkDelivered(int orderId)
         {
-            await _orderService.UpdateOrderStatusAsync(orderId, "Delivered");
-            var response = new ApiResponse<object?>(null, true, 200, "Order marked as delivered");
-            return Ok(response);
+            var status = await _orderService.UpdateOrderStatusAsync(
+                orderId,
+                3, // Delivered
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            );
+
+            if (status == null) 
+                return NotFound(new ApiResponse<string?>(
+                    null,
+                    false,
+                    404,
+                    "Order not found"
+                ));
+
+            return Ok(new ApiResponse<string?>(
+                status,
+                true,
+                200,
+                $"Order marked as {status}"
+            ));
         }
 
+
         // -----------------------------
-        // Update order status (Pending, Shipped, Delivered, etc.)
+        // Update order status (Pending, Shipped, Delivered)
         // -----------------------------
         [HttpPut("{orderId}/status")]
-        public async Task<IActionResult> UpdateStatus(int orderId, [FromQuery] string status)
+        public async Task<IActionResult> UpdateStatus(int orderId, [FromBody] AdminOrderStatusUpdateDto dto)
         {
-            await _orderService.UpdateOrderStatusAsync(orderId, status);
-            var response = new ApiResponse<object?>(null, true, 200, $"Order status updated to {status}");
-            return Ok(response);
+            // Validate numeric status
+            if (dto.Status < 1 || dto.Status > 3)
+                return BadRequest(new ApiResponse<string?>(
+                    null,
+                    false,
+                    400,
+                    "Invalid status. Must be 1 (Pending), 2 (Shipped), or 3 (Delivered)"
+                ));
+
+            var status = await _orderService.UpdateOrderStatusAsync(
+                orderId,
+                dto.Status,
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            );
+
+            if (status == null)   
+                return NotFound(new ApiResponse<string?>(
+                    null,
+                    false,
+                    404,
+                    "Order not found"
+                ));
+
+            return Ok(new ApiResponse<string?>(
+                status,
+                true,
+                200,
+                $"Order status updated to {status}"
+            ));
         }
+
+
     }
 }

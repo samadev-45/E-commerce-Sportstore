@@ -7,6 +7,9 @@
         public string Address { get; set; } = string.Empty;
         public string Status { get; set; } = "Pending";
         public decimal TotalPrice { get; set; }
+        public string PaymentType { get; set; } = "COD";
+        public string? PaymentId { get; set; }
+        public string? FundAccountId { get; set; }
         public List<OrderItemDto> OrderItems { get; set; } = new();
     }
 }
