@@ -41,6 +41,8 @@ namespace MyApp.Services.Implementations
             var entities = await _repository.Query()
                                             .Where(e => !e.IsDeleted)
                                             .ToListAsync();
+            _repository.Query().AsNoTracking().Where(e => !e.IsDeleted);
+
             return _mapper.Map<IEnumerable<TDto>>(entities);
         }
 

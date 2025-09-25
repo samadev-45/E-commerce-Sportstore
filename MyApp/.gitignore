@@ -39,3 +39,6 @@ appsettings.Local.json
 # Other
 node_modules/
 wwwroot/lib/
+
+appsettings.json
+

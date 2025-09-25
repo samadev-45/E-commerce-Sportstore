@@ -48,10 +48,7 @@ namespace MyApp.Repositories.Implementations
             return Task.CompletedTask;
         }
 
-        public async Task SaveChangesAsync()
-        {
-            await _context.SaveChangesAsync();
-        }
+       
 
         public IQueryable<TEntity> Query()
         {
@@ -59,7 +56,11 @@ namespace MyApp.Repositories.Implementations
         }
         public void Remove(TEntity entity)
         {
-            _dbSet.Remove(entity);  // <-- use DbSet.Remove
+            _dbSet.Remove(entity);  
+        }
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
         }
 
 
