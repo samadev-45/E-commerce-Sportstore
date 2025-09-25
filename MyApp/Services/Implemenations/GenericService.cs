@@ -28,7 +28,7 @@ namespace MyApp.Services.Implementations
         }
 
         // Get current logged-in user id from JWT token
-        private int? GetCurrentUserId()
+        protected int? GetCurrentUserId()
         {
             var userId = _httpContextAccessor.HttpContext?.User.FindFirst("userId")?.Value;
             if (int.TryParse(userId, out int id))

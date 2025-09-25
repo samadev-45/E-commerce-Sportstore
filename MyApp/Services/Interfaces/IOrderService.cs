@@ -11,7 +11,10 @@ namespace MyApp.Services.Interfaces
         Task<IEnumerable<OrderDto>> GetOrdersByUserAsync(int userId);
         Task CancelOrderAsync(int orderId);
         Task<IEnumerable<AdminOrderDto>> GetAllOrdersForAdminAsync(string? search = null, string? status = null);
-        Task<string?> UpdateOrderStatusAsync(int orderId, int statusId, string? modifiedByUserId = null);
+        Task<string> UpdateOrderStatusAsync(
+        int orderId,string? status = null,int? statusId = null,string? modifiedByUserId = null);
+
+
 
         // Test mode online payment
         Task<object> PayOnlineAsync(int orderId);

@@ -1,10 +1,11 @@
 ﻿using MyApp.Common;
+using MyApp.Common.Enums;
 using System;
 using System.Collections.Generic;
 
 namespace MyApp.Entities
 {
-    public class Order:BaseEntity
+    public class Order : BaseEntity
     {
         public int Id { get; set; }
 
@@ -13,11 +14,14 @@ namespace MyApp.Entities
 
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
         public string Address { get; set; } = string.Empty;
-        public string Status { get; set; } = "Pending"; // Pending, Completed, Cancelled
-        public string PaymentType { get; set; }
+
+        // Default status using OrderStatus helper
+        public string Status { get; set; } = OrderStatus.Pending.ToString();
+
+        public string PaymentType { get; set; } = "COD";
         public decimal TotalPrice { get; set; }
         public string? PaymentId { get; set; }
-        public string? FundAccountId { get; set; } // optional: vendor fund account
+        
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }

@@ -39,8 +39,14 @@ namespace MyApp.Services.Implementations
 
         public async Task<ProductDto> CreateAsync(ProductCreateDto dto)
         {
+           
             var product = _mapper.Map<Product>(dto);
 
+            
+            product.CreatedOn = DateTime.UtcNow;
+            product.CreatedBy = GetCurrentUserId();
+
+            
             if (dto.Image != null)
             {
                 try
@@ -54,6 +60,7 @@ namespace MyApp.Services.Implementations
                 }
             }
 
+            // Save
             await _productRepository.AddAsync(product);
             await _productRepository.SaveChangesAsync();
 
@@ -65,7 +72,12 @@ namespace MyApp.Services.Implementations
             var product = await _productRepository.GetByIdAsync(id);
             if (product == null || product.IsDeleted) return null;
 
+            
             _mapper.Map(dto, product);
+
+            
+            product.ModifiedOn = DateTime.UtcNow;
+            product.ModifiedBy = GetCurrentUserId();
 
             if (dto.Image != null)
             {
@@ -74,7 +86,7 @@ namespace MyApp.Services.Implementations
                     // Delete old image if exists
                     if (!string.IsNullOrEmpty(product.ImageUrl))
                     {
-                        var publicId = ExtractPublicId(product.ImageUrl); // Implement helper
+                        var publicId = ExtractPublicId(product.ImageUrl);
                         await _imageService.DeleteAsync(publicId);
                     }
 
@@ -91,6 +103,7 @@ namespace MyApp.Services.Implementations
             await _productRepository.SaveChangesAsync();
             return true;
         }
+
 
         public override async Task<bool> DeleteAsync(int id)
         {
@@ -151,13 +164,13 @@ namespace MyApp.Services.Implementations
             var uri = new Uri(url);
             var path = uri.AbsolutePath;
             var parts = path.Split('/');
-            if (parts.Length >= 4) // /image/upload/v1234/products/123
+            if (parts.Length >= 4) // 
             {
                 var folder = parts[parts.Length - 2];
-                var id = parts[parts.Length - 1].Split('.')[0]; // Remove extension
+                var id = parts[parts.Length - 1].Split('.')[0]; 
                 return $"{folder}/{id}";
             }
-            return path.Split('/').Last().Split('.').First(); // Fallback
+            return path.Split('/').Last().Split('.').First(); 
         }
     }
 }
