@@ -7,15 +7,15 @@ namespace MyApp.Helpers
 {
     public static class ControllerExtensions
     {
-        public static IActionResult OkResponse<T>(this ControllerBase controller, T data, string message = "Success")
+        public static IActionResult OkResponse(this ControllerBase controller, object? data, string message = "Success")
         {
-            var response = new ApiResponse<T>(data, true, 200, message);
+            var response = ApiResponse.SuccessResponse(data, message);
             return controller.Ok(response);
         }
 
         public static IActionResult BadResponse(this ControllerBase controller, string message, int statusCode = 400)
         {
-            var response = new ApiResponse<object>(null, false, statusCode, message);
+            var response = ApiResponse.FailResponse(message, statusCode);
             return controller.StatusCode(statusCode, response);
         }
     }

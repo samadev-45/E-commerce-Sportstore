@@ -13,6 +13,8 @@ namespace MyApp.Services.Interfaces
         Task<IEnumerable<AdminOrderDto>> GetAllOrdersForAdminAsync(string? search = null, string? status = null);
         Task<string> UpdateOrderStatusAsync(
         int orderId,string? status = null,int? statusId = null,string? modifiedByUserId = null);
+        Task<AdminOrderDto?> GetOrderByIdForAdminAsync(int orderId);
+
 
 
 

@@ -22,7 +22,8 @@ namespace MyApp.Helpers
                 new Claim("UserId", user.Id.ToString()),
                 new Claim("Email", user.Email),
                 new Claim("Name", user.Name ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role == "admin" ? "Admin" : user.Role ?? "User")
+                new Claim(ClaimTypes.Role, char.ToUpper(user.Role[0]) + user.Role.Substring(1).ToLower())
+
 
             };
 

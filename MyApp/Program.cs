@@ -147,7 +147,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<MyApp.Middleware.ExceptionMiddleware>();
 
-// Seed database if needed
+// Seed database 
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();

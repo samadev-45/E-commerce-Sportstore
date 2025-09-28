@@ -4,12 +4,13 @@ using MyApp.Common;
 using MyApp.DTOs.Orders;
 using MyApp.Services.Interfaces;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace MyApp.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/orders")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")] // Only admins
     public class AdminOrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -20,14 +21,21 @@ namespace MyApp.Controllers.Admin
         }
 
         // -----------------------------
+        // Helper: Get current admin id
+        // -----------------------------
+        private string? GetAdminId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        // -----------------------------
         // Get all orders (search & filter)
         // -----------------------------
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? status)
         {
             var orders = await _orderService.GetAllOrdersForAdminAsync(search, status);
-            var response = new ApiResponse<IEnumerable<AdminOrderDto>>(orders, true, 200, "Orders retrieved successfully");
-            return Ok(response);
+            return Ok(ApiResponse.SuccessResponse(orders, "Orders retrieved successfully"));
         }
 
         // -----------------------------
@@ -36,24 +44,11 @@ namespace MyApp.Controllers.Admin
         [HttpGet("{orderId}")]
         public async Task<IActionResult> GetById(int orderId)
         {
-            var orders = await _orderService.GetAllOrdersForAdminAsync(null, null);
-            var order = orders.FirstOrDefault(o => o.OrderId == $"order_{orderId}");
-
-
+            var order = await _orderService.GetOrderByIdForAdminAsync(orderId);
             if (order == null)
-                return NotFound(new ApiResponse<string>(
-                    null,
-                    false,
-                    404,
-                    "Order not found"
-                ));
+                return NotFound(ApiResponse.FailResponse("Order not found", 404));
 
-            return Ok(new ApiResponse<AdminOrderDto>(
-                order,
-                true,
-                200,
-                "Order retrieved successfully"
-            ));
+            return Ok(ApiResponse.SuccessResponse(order, "Order retrieved successfully"));
         }
 
         // -----------------------------
@@ -62,19 +57,16 @@ namespace MyApp.Controllers.Admin
         [HttpPut("{orderId}/deliver")]
         public async Task<IActionResult> MarkDelivered(int orderId)
         {
+            var adminId = GetAdminId();
+
             var status = await _orderService.UpdateOrderStatusAsync(
                 orderId: orderId,
                 status: null,
                 statusId: 3, // Delivered
-                modifiedByUserId: User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                modifiedByUserId: adminId
             );
 
-            return Ok(new ApiResponse<string>(
-                status,
-                true,
-                200,
-                $"Order marked as {status}"
-            ));
+            return Ok(ApiResponse.SuccessResponse(status, $"Order marked as {status}"));
         }
 
         // -----------------------------
@@ -83,28 +75,20 @@ namespace MyApp.Controllers.Admin
         [HttpPut("{orderId}/status")]
         public async Task<IActionResult> UpdateStatus(int orderId, [FromBody] AdminOrderStatusUpdateDto dto)
         {
+            var adminId = GetAdminId();
+
             // Validate numeric status
             if (dto.Status < 1 || dto.Status > 3)
-                return BadRequest(new ApiResponse<string>(
-                    null,
-                    false,
-                    400,
-                    "Invalid status. Must be 1 (Pending), 2 (Shipped), or 3 (Delivered)"
-                ));
+                return BadRequest(ApiResponse.FailResponse("Invalid status. Must be 1 (Pending), 2 (Shipped), or 3 (Delivered)"));
 
             var status = await _orderService.UpdateOrderStatusAsync(
                 orderId: orderId,
                 status: null,
                 statusId: dto.Status,
-                modifiedByUserId: User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                modifiedByUserId: adminId
             );
 
-            return Ok(new ApiResponse<string>(
-                status,
-                true,
-                200,
-                $"Order status updated to {status}"
-            ));
+            return Ok(ApiResponse.SuccessResponse(status, $"Order status updated to {status}"));
         }
     }
 }

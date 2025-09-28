@@ -117,11 +117,16 @@ namespace MyApp.Services.Implementations
                 await _imageService.DeleteAsync(publicId);
             }
 
+            // Mark as deleted
             product.IsDeleted = true;
+            product.DeletedOn = DateTime.UtcNow;
+            product.DeletedBy = GetCurrentUserId(); 
+
             await _productRepository.UpdateAsync(product);
             await _productRepository.SaveChangesAsync();
             return true;
         }
+
 
         public async Task<bool> RestoreAsync(int id)
         {

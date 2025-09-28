@@ -33,10 +33,11 @@ namespace MyApp.Services.Implementations
         public async Task AddToCartAsync(int userId, int productId, int quantity)
         {
             var existingItem = await _cartRepository.GetCartItemAsync(userId, productId);
+
             if (existingItem != null)
             {
+                //  If the product is already in cart, just increase the quantity
                 existingItem.Quantity += quantity;
-                await _cartRepository.UpdateAsync(existingItem);
             }
             else
             {
@@ -49,6 +50,7 @@ namespace MyApp.Services.Implementations
                 await _cartRepository.AddAsync(newItem);
             }
 
+            // EF Core tracks changes automatically, just save
             await _cartRepository.SaveChangesAsync();
         }
 
@@ -68,7 +70,7 @@ namespace MyApp.Services.Implementations
             if (item != null)
             {
                 item.Quantity = quantity;
-                await _cartRepository.UpdateAsync(item);
+                // No UpdateAsync needed; EF Core tracks changes
                 await _cartRepository.SaveChangesAsync();
             }
         }

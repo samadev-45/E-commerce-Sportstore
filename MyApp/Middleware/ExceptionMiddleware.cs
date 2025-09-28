@@ -33,15 +33,17 @@ namespace MyApp.Middleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = 500;
 
-            var response = new ApiResponse<string>
+            // Use non-generic ApiResponse
+            var response = new ApiResponse
             {
                 Success = false,
                 StatusCode = 500,
                 Data = null,
-                Message = ex.Message // or a generic message like "Internal server error"
+                Message = ex.Message
             };
 
             await context.Response.WriteAsJsonAsync(response);
         }
+
     }
 }

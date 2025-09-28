@@ -56,8 +56,14 @@ namespace MyApp.Services.Implementations
 
         public async Task MoveToCartAsync(int userId, int productId)
         {
-            var wishlistItem = await _wishlistRepository.GetWishlistItemAsync(userId, productId);
-            if (wishlistItem != null)
+            // 1️⃣ Check if the product is already in the cart
+            var existingCartItem = await _cartRepository.GetCartItemAsync(userId, productId);
+
+            if (existingCartItem != null)
+            {
+                existingCartItem.Quantity += 1; // EF tracks this change automatically
+            }
+            else
             {
                 var cartItem = new CartItem
                 {
@@ -66,12 +72,20 @@ namespace MyApp.Services.Implementations
                     Quantity = 1
                 };
                 await _cartRepository.AddAsync(cartItem);
-
-                await _wishlistRepository.DeleteAsync(wishlistItem);
-
-                await _wishlistRepository.SaveChangesAsync();
-                await _cartRepository.SaveChangesAsync();
             }
+
+            // 2️⃣ Remove from wishlist
+            var wishlistItem = await _wishlistRepository.GetWishlistItemAsync(userId, productId);
+            if (wishlistItem != null)
+            {
+                await _wishlistRepository.DeleteAsync(wishlistItem);
+            }
+
+            // 3️⃣ Save all changes
+            await _cartRepository.SaveChangesAsync();
+            await _wishlistRepository.SaveChangesAsync();
         }
+
+
     }
 }

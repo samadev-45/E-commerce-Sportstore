@@ -1,13 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyApp.Common;
 using MyApp.Helpers;
 using MyApp.Services.Interfaces;
+using System.Threading.Tasks;
 
 namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "User")]
     public class WishlistController : ControllerBase
     {
         private readonly IWishlistService _wishlistService;
@@ -17,56 +19,45 @@ namespace MyApp.Controllers
             _wishlistService = wishlistService;
         }
 
-        [HttpGet("user")]
-        public async Task<IActionResult> GetWishlistForCurrentUser()
+        private int GetUserId()
         {
             var userIdClaim = User.FindFirst("userId");
             if (userIdClaim == null)
-                return this.BadResponse("Unauthorized", 401);
+                throw new UnauthorizedAccessException("User ID not found in token");
 
-            int userId = int.Parse(userIdClaim.Value);
-            var wishlist = await _wishlistService.GetUserWishlistAsync(userId);
+            return int.Parse(userIdClaim.Value);
+        }
 
-            return this.OkResponse(wishlist, "Wishlist retrieved successfully");
+        [HttpGet("user")]
+        public async Task<IActionResult> GetWishlistForCurrentUser()
+        {
+            var wishlist = await _wishlistService.GetUserWishlistAsync(GetUserId());
+            return Ok(ApiResponse.SuccessResponse(wishlist, "Wishlist retrieved successfully"));
         }
 
         [HttpPost("user/add/{productId}")]
         public async Task<IActionResult> AddToWishlist(int productId)
         {
-            var userIdClaim = User.FindFirst("userId");
-            if (userIdClaim == null)
-                return this.BadResponse("Unauthorized", 401);
-
-            int userId = int.Parse(userIdClaim.Value);
-            await _wishlistService.AddToWishlistAsync(userId, productId);
-
-            return this.OkResponse<object?>(null, "Product added to wishlist");
+            await _wishlistService.AddToWishlistAsync(GetUserId(), productId);
+            var wishlist = await _wishlistService.GetUserWishlistAsync(GetUserId());
+            return Ok(ApiResponse.SuccessResponse(wishlist, "Product added to wishlist"));
         }
 
         [HttpDelete("user/remove/{productId}")]
         public async Task<IActionResult> RemoveFromWishlist(int productId)
         {
-            var userIdClaim = User.FindFirst("userId");
-            if (userIdClaim == null)
-                return this.BadResponse("Unauthorized", 401);
-
-            int userId = int.Parse(userIdClaim.Value);
-            await _wishlistService.RemoveFromWishlistAsync(userId, productId);
-
-            return this.OkResponse<object?>(null, "Product removed from wishlist");
+            await _wishlistService.RemoveFromWishlistAsync(GetUserId(), productId);
+            var wishlist = await _wishlistService.GetUserWishlistAsync(GetUserId());
+            return Ok(ApiResponse.SuccessResponse(wishlist, "Product removed from wishlist"));
         }
 
         [HttpPost("user/move-to-cart/{productId}")]
         public async Task<IActionResult> MoveToCart(int productId)
         {
-            var userIdClaim = User.FindFirst("userId");
-            if (userIdClaim == null)
-                return this.BadResponse("Unauthorized", 401);
-
-            int userId = int.Parse(userIdClaim.Value);
-            await _wishlistService.MoveToCartAsync(userId, productId);
-
-            return this.OkResponse<object?>(null, "Product moved to cart");
+            await _wishlistService.MoveToCartAsync(GetUserId(), productId);
+            var wishlist = await _wishlistService.GetUserWishlistAsync(GetUserId());
+            return Ok(ApiResponse.SuccessResponse(wishlist, "Product moved to cart"));
         }
+
     }
 }

@@ -2,19 +2,21 @@
 
 namespace MyApp.Repositories.Interfaces
 {
-    public interface IGenericRepository<TEntity> where TEntity : class
+    public interface IGenericRepository<T> where T : class
     {
-        Task<IEnumerable<TEntity>> GetAllAsync();
-        Task<TEntity?> GetByIdAsync(int id);
-        Task<IEnumerable<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<IEnumerable<T>> GetAllAsync();
+        Task<T?> GetByIdAsync(int id);
+        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
 
-        Task AddAsync(TEntity entity);
-        Task UpdateAsync(TEntity entity);
-        Task DeleteAsync(TEntity entity);
-        void Remove(TEntity entity);
+        Task AddAsync(T entity);
+        Task UpdateAsync(T entity);
+
+        // Updated return type
+        Task<bool> DeleteAsync(T entity);
+
+        void Remove(T entity);
 
         Task SaveChangesAsync();
-        IQueryable<TEntity> Query();
-
+        IQueryable<T> Query();
     }
 }

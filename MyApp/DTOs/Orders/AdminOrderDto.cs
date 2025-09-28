@@ -9,6 +9,9 @@
         public List<AdminOrderItemDto> Items { get; set; } = new();
         public string Address { get; set; } = string.Empty;
         public DateTime Time { get; set; } 
-        public string Status { get; set; } = "Pending"; 
+        public string Status { get; set; } = "Pending";
+        
+
+
     }
 }

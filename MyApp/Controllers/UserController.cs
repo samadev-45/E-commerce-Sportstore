@@ -1,13 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyApp.Common;
 using MyApp.Helpers;
 using MyApp.Services.Interfaces;
+using System.Threading.Tasks;
 
 namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "User")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -19,7 +21,11 @@ namespace MyApp.Controllers
 
         private int GetUserId()
         {
-            return int.Parse(User.FindFirst("userId")!.Value);
+            var userIdClaim = User.FindFirst("userId");
+            if (userIdClaim == null)
+                throw new UnauthorizedAccessException("User ID not found in token");
+
+            return int.Parse(userIdClaim.Value);
         }
 
         [HttpGet("profile")]
@@ -27,9 +33,9 @@ namespace MyApp.Controllers
         {
             var profile = await _userService.GetUserProfileAsync(GetUserId());
             if (profile == null)
-                return this.BadResponse("User profile not found", 404);
+                return NotFound(ApiResponse.FailResponse("User profile not found", 404));
 
-            return this.OkResponse(profile, "Profile retrieved successfully");
+            return Ok(ApiResponse.SuccessResponse(profile, "Profile retrieved successfully"));
         }
     }
 }

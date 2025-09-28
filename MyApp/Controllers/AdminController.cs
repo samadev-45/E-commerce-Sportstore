@@ -8,7 +8,7 @@ namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")] 
     public class AdminController : ControllerBase
     {
         private readonly IAdminService _adminService;
@@ -18,43 +18,58 @@ namespace MyApp.Controllers
             _adminService = adminService;
         }
 
-        // Get all users
+        //  Get all users
         [HttpGet("users")]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<ActionResult<ApiResponse>> GetAllUsers()
         {
             var users = await _adminService.GetAllUsersAsync();
-            return Ok(new { success = true, data = users });
+
+            if (users == null || !users.Any())
+                return NotFound(ApiResponse.FailResponse("No users found", 404));
+
+            return Ok(ApiResponse.SuccessResponse(users, "Users retrieved successfully"));
         }
 
-        // Get user by id
+        //  Get user by id
         [HttpGet("users/{id}")]
-        public async Task<IActionResult> GetUserById(int id)
+        public async Task<ActionResult<ApiResponse>> GetUserById(int id)
         {
             var user = await _adminService.GetUserByIdAsync(id);
             if (user == null)
-                return NotFound(new { success = false, message = "User not found" });
+                return NotFound(ApiResponse.FailResponse("User not found", 404));
 
-            return Ok(new { success = true, data = user });
+            return Ok(ApiResponse.SuccessResponse(user, "User retrieved successfully"));
         }
 
-        // Block / Unblock user
-        [HttpPut("users/{id}/status")]
-        public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] UpdateUserStatusDto dto)
+        //  Toggle Block/Unblock user
+        [HttpPut("users/{id}/toggle-status")]
+        public async Task<ActionResult<ApiResponse>> ToggleUserStatus(int id)
         {
-            var result = await _adminService.UpdateUserStatusAsync(id, dto.IsBlocked);
-            if (!result)
-                return NotFound(new { success = false, message = "User not found" });
+            var user = await _adminService.GetUserByIdAsync(id);
+            if (user == null)
+                return NotFound(ApiResponse.FailResponse("User not found", 404));
 
-            var status = dto.IsBlocked ? "blocked" : "unblocked";
-            return Ok(new { success = true, message = $"User {status} successfully" });
+            // Flip the status automatically
+            var newStatus = !user.IsBlocked;
+            var result = await _adminService.UpdateUserStatusAsync(id, newStatus);
+
+            if (!result)
+                return StatusCode(500, ApiResponse.FailResponse("Failed to update user status", 500));
+
+            var statusText = newStatus ? "blocked" : "unblocked";
+            return Ok(ApiResponse.SuccessResponse(null, $"User {statusText} successfully"));
         }
 
+        //  Search users by name
         [HttpGet("search")]
-        public async Task<IActionResult> SearchUsers([FromQuery] string name)
+        public async Task<ActionResult<ApiResponse>> SearchUsers([FromQuery] string name)
         {
             var users = await _adminService.SearchUsersByNameAsync(name);
-            return Ok(new ApiResponse<List<UserDto>>(users));
-        }
 
+            if (users == null || !users.Any())
+                return NotFound(ApiResponse.FailResponse("No users found with given name", 404));
+
+            return Ok(ApiResponse.SuccessResponse(users, "Users retrieved successfully"));
+        }
     }
 }

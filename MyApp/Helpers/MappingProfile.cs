@@ -49,8 +49,8 @@ namespace MyApp.Helpers
                 .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())
-                .ForMember(dest => dest.OrderItems, opt => opt.Ignore()) // populated from cart
-                .ForMember(dest => dest.PaymentId, opt => opt.Ignore()); // Razorpay payment ID
+                .ForMember(dest => dest.OrderItems, opt => opt.Ignore()) 
+                .ForMember(dest => dest.PaymentId, opt => opt.Ignore()); // Razorpay 
                 
 
             CreateMap<Order, OrderDto>();

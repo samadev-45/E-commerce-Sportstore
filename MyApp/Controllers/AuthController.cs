@@ -1,8 +1,9 @@
-﻿using MyApp.DTOs;
+﻿using Microsoft.AspNetCore.Mvc;
+using MyApp.Common;
+using MyApp.DTOs;
 using MyApp.DTOs.Auth;
 using MyApp.Helpers;
 using MyApp.Services.Interfaces;
-using Microsoft.AspNetCore.Mvc;
 
 namespace MyApp.Controllers
 {
@@ -24,14 +25,14 @@ namespace MyApp.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
             if (!ModelState.IsValid)
-                return this.BadResponse("Invalid input data");
+                return BadRequest(ApiResponse.FailResponse("Invalid input data"));
 
             var result = await _auth.RegisterAsync(dto);
 
             if (result == null)
-                return this.OkResponse<object?>(null, "Registration successful. Please log in.");
+                return Ok(ApiResponse.SuccessResponse(null, "Registration successful. Please log in."));
 
-            return this.OkResponse(result, "User created successfully");
+            return Ok(ApiResponse.SuccessResponse(result, "User created successfully"));
         }
 
         // -----------------------------
@@ -41,14 +42,14 @@ namespace MyApp.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
             if (!ModelState.IsValid)
-                return this.BadResponse("Invalid input data");
+                return BadRequest(ApiResponse.FailResponse("Invalid input data"));
 
             var loginResult = await _auth.LoginAsync(dto);
 
             if (loginResult == null)
-                return this.BadResponse("Invalid credentials or user blocked", 401);
+                return Unauthorized(ApiResponse.FailResponse("Invalid credentials or user blocked"));
 
-            return this.OkResponse(loginResult, "Login successful");
+            return Ok(ApiResponse.SuccessResponse(loginResult, "Login successful"));
         }
 
         // -----------------------------
@@ -58,14 +59,14 @@ namespace MyApp.Controllers
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.RefreshToken))
-                return this.BadResponse("Refresh token is required");
+                return BadRequest(ApiResponse.FailResponse("Refresh token is required"));
 
             var result = await _auth.RefreshAsync(dto.RefreshToken);
 
             if (result == null)
-                return this.BadResponse("Invalid or expired refresh token", 401);
+                return Unauthorized(ApiResponse.FailResponse("Invalid or expired refresh token"));
 
-            return this.OkResponse(result, "Token refreshed successfully");
+            return Ok(ApiResponse.SuccessResponse(result, "Token refreshed successfully"));
         }
 
         // -----------------------------
@@ -75,14 +76,14 @@ namespace MyApp.Controllers
         public async Task<IActionResult> Revoke([FromBody] RevokeTokenDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.RefreshToken))
-                return this.BadResponse("Refresh token is required");
+                return BadRequest(ApiResponse.FailResponse("Refresh token is required"));
 
             var success = await _auth.RevokeAsync(dto.RefreshToken);
 
             if (!success)
-                return this.BadResponse("Invalid or already revoked token");
+                return BadRequest(ApiResponse.FailResponse("Invalid or already revoked token"));
 
-            return this.OkResponse<object?>(null, "Token revoked successfully");
+            return Ok(ApiResponse.SuccessResponse(null, "Token revoked successfully"));
         }
     }
 }

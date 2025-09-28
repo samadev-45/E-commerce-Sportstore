@@ -15,7 +15,7 @@ public class CloudinaryImageService : IImageService
     {
         _cloudinary = cloudinary ?? throw new ArgumentNullException(nameof(cloudinary));
         _defaultFolder = settings.Value.DefaultFolder ?? "ecommerce";
-        // Add debug log here
+        //  debug log
         Console.WriteLine($"Cloudinary INIT: Cloud={_cloudinary.Api.Account.Cloud}, ApiKey={_cloudinary.Api.Account.ApiKey}, ApiSecret={_cloudinary.Api.Account.ApiSecret}");
     }
 
@@ -31,7 +31,7 @@ public class CloudinaryImageService : IImageService
             Transformation = new Transformation().Quality("auto").FetchFormat("auto")
         };
 
-        // Add debug log here
+        // debug log 
         Console.WriteLine($"UploadFromUrl Params: Url={url}, Folder={uploadParams.Folder}, PublicId={uploadParams.PublicId}");
         var result = await _cloudinary.UploadAsync(uploadParams);
         if (result.Error != null) throw new ApplicationException(result.Error.Message);
@@ -53,7 +53,7 @@ public class CloudinaryImageService : IImageService
             Format = convertToPng ? "png" : null,
             Transformation = new Transformation().Quality("auto").FetchFormat("auto")
         };
-        // Add debug log here
+        // debug log 
         Console.WriteLine($"UploadFromFile Params: FileName={file.FileName}, Folder={uploadParams.Folder}, PublicId={uploadParams.PublicId}, CloudName={_cloudinary.Api.Account.Cloud}");
         Console.WriteLine($"Uploading with CloudName: {_cloudinary.Api.Account.Cloud}, ApiKey: {_cloudinary.Api.Account.ApiKey}");
 

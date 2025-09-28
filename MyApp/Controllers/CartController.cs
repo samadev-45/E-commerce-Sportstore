@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyApp.Common;
 using MyApp.Helpers;
 using MyApp.Services.Interfaces;
 
@@ -7,7 +8,7 @@ namespace MyApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "User")]
     public class CartController : ControllerBase
     {
         private readonly ICartService _cartService;
@@ -25,12 +26,12 @@ namespace MyApp.Controllers
         {
             var userIdClaim = User.FindFirst("userId");
             if (userIdClaim == null)
-                return this.BadResponse("Unauthorized", 401);
+                return Unauthorized(ApiResponse.FailResponse("Unauthorized"));
 
             int userId = int.Parse(userIdClaim.Value);
             var cart = await _cartService.GetUserCartAsync(userId);
 
-            return this.OkResponse(cart, "Cart retrieved successfully");
+            return Ok(ApiResponse.SuccessResponse(cart, "Cart retrieved successfully"));
         }
 
         // -----------------------------
@@ -41,12 +42,12 @@ namespace MyApp.Controllers
         {
             var userIdClaim = User.FindFirst("userId");
             if (userIdClaim == null)
-                return this.BadResponse("Unauthorized", 401);
+                return Unauthorized(ApiResponse.FailResponse("Unauthorized"));
 
             int userId = int.Parse(userIdClaim.Value);
             await _cartService.AddToCartAsync(userId, productId, quantity);
 
-            return this.OkResponse<object?>(null, "Product added to cart");
+            return Ok(ApiResponse.SuccessResponse(null, "Product added to cart"));
         }
 
         // -----------------------------
@@ -57,12 +58,12 @@ namespace MyApp.Controllers
         {
             var userIdClaim = User.FindFirst("userId");
             if (userIdClaim == null)
-                return this.BadResponse("Unauthorized", 401);
+                return Unauthorized(ApiResponse.FailResponse("Unauthorized"));
 
             int userId = int.Parse(userIdClaim.Value);
             await _cartService.RemoveFromCartAsync(userId, productId);
 
-            return this.OkResponse<object?>(null, "Product removed from cart");
+            return Ok(ApiResponse.SuccessResponse(null, "Product removed from cart"));
         }
 
         // -----------------------------
@@ -73,12 +74,12 @@ namespace MyApp.Controllers
         {
             var userIdClaim = User.FindFirst("userId");
             if (userIdClaim == null)
-                return this.BadResponse("Unauthorized", 401);
+                return Unauthorized(ApiResponse.FailResponse("Unauthorized"));
 
             int userId = int.Parse(userIdClaim.Value);
             await _cartService.UpdateQuantityAsync(userId, productId, quantity);
 
-            return this.OkResponse<object?>(null, "Quantity updated");
+            return Ok(ApiResponse.SuccessResponse(null, "Quantity updated"));
         }
     }
 }
