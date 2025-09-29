@@ -9,6 +9,7 @@ namespace MyApp.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Product> Products { get; set; }
+        public DbSet<ProductImage> ProductImages { get; set; } // ✅ Add ProductImages
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<WishlistItem> WishlistItems { get; set; }
         public DbSet<Order> Orders { get; set; }
@@ -57,11 +58,13 @@ namespace MyApp.Data
                 .WithOne(oi => oi.Order)
                 .HasForeignKey(oi => oi.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
+            // In AppDbContext.cs -> OnModelCreating
+            modelBuilder.Entity<ProductImage>()
+                .HasOne(pi => pi.Product)
+                .WithMany(p => p.ProductImages) // <-- use ProductImages, not Images
+                .HasForeignKey(pi => pi.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // Optional: configure Product properties
-            modelBuilder.Entity<Product>()
-                .Property(p => p.ImageUrl)
-                .HasMaxLength(500);
         }
     }
 }

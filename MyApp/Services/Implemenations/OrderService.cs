@@ -144,8 +144,7 @@ namespace MyApp.Services.Implementations
                 if (!cartItems.Any())
                     throw new InvalidOperationException("Cart is empty.");
 
-                var order = _mapper.Map<Order>(dto)
-;
+                var order = _mapper.Map<Order>(dto);
                 order.UserId = userId;
                 order.OrderItems = new List<OrderItem>();
                 decimal total = 0;
@@ -168,7 +167,7 @@ namespace MyApp.Services.Implementations
                 }
 
                 order.TotalPrice = total;
-                order.Status = dto.PaymentType == "COD"
+                order.Status = dto.PaymentMethod == PaymentMethod.COD
                     ? OrderStatus.Pending.ToString()
                     : OrderStatus.PaymentInitiated.ToString();
 
@@ -179,13 +178,13 @@ namespace MyApp.Services.Implementations
 
                 await _orderRepository.SaveChangesAsync();
 
-                if (dto.PaymentType == "Online")
+                if (dto.PaymentMethod == PaymentMethod.Online)
                 {
                     await HandleOnlinePayment(order);
                 }
 
                 await transaction.CommitAsync();
-                return  _mapper.Map<OrderDto>(order);
+                return _mapper.Map<OrderDto>(order);
 
             }
             catch

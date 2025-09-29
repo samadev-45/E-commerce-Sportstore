@@ -43,15 +43,17 @@ namespace MyApp.Helpers
             // -----------------------
             // Order mappings
             // -----------------------
+            
             CreateMap<CreateOrderDto, Order>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src =>
-                    src.PaymentType == "COD" ? "Pending" : "Payment Initiated"))
+                    src.PaymentMethod == MyApp.Common.Enums.PaymentMethod.COD
+                        ? "Pending"
+                        : "Payment Initiated"))
                 .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())
-                .ForMember(dest => dest.OrderItems, opt => opt.Ignore()) 
-                .ForMember(dest => dest.PaymentId, opt => opt.Ignore()); // Razorpay 
-                
+                .ForMember(dest => dest.OrderItems, opt => opt.Ignore())
+                .ForMember(dest => dest.PaymentId, opt => opt.Ignore()); // Razorpay
 
             CreateMap<Order, OrderDto>();
             CreateMap<OrderItem, OrderItemDto>()
@@ -66,6 +68,7 @@ namespace MyApp.Helpers
             CreateMap<OrderItem, AdminOrderItemDto>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
                 .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice));
+
 
             // -----------------------
             // User mappings

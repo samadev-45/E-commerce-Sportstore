@@ -18,9 +18,6 @@ namespace MyApp.Controllers
             _productService = productService;
         }
 
-        // -----------------------------
-        // Get all products (public)
-        // -----------------------------
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAll()
@@ -29,9 +26,6 @@ namespace MyApp.Controllers
             return Ok(ApiResponse.SuccessResponse(products, "Products retrieved successfully"));
         }
 
-        // -----------------------------
-        // Get product by ID (public)
-        // -----------------------------
         [HttpGet("{id}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetById(int id)
@@ -43,9 +37,6 @@ namespace MyApp.Controllers
             return Ok(ApiResponse.SuccessResponse(product, "Product retrieved successfully"));
         }
 
-        // -----------------------------
-        // Create new product (Admin only)
-        // -----------------------------
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromForm] ProductCreateDto dto)
@@ -57,10 +48,6 @@ namespace MyApp.Controllers
             return StatusCode(201, ApiResponse.SuccessResponse(product, "Product created successfully"));
         }
 
-        // -----------------------------
-        // Update product (Admin only)
-        // -----------------------------
-        // Update product (Admin only)
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromForm] ProductUpdateDto dto)
@@ -68,40 +55,35 @@ namespace MyApp.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ApiResponse.FailResponse("Invalid product data"));
 
-            var updated = (await _productService.UpdateAsync(id, dto)).GetValueOrDefault();// no GetValueOrDefault()
-            if (!updated)
+            var updated = await _productService.UpdateAsync(id, dto);
+            if (!updated.GetValueOrDefault())
                 return NotFound(ApiResponse.FailResponse("Product not found or deleted"));
 
             return Ok(ApiResponse.SuccessResponse(true, "Product updated successfully"));
         }
 
-        // Delete product (Admin only)
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _productService.DeleteAsync(id); // no GetValueOrDefault()
+            var deleted = await _productService.DeleteAsync(id);
             if (!deleted)
                 return NotFound(ApiResponse.FailResponse("Product not found or already deleted"));
 
             return Ok(ApiResponse.SuccessResponse(true, "Product deleted successfully"));
         }
 
-        // Restore deleted product (Admin only)
         [HttpPut("restore/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Restore(int id)
         {
-            var restored = await _productService.RestoreAsync(id); // no GetValueOrDefault()
+            var restored = await _productService.RestoreAsync(id);
             if (!restored)
                 return NotFound(ApiResponse.FailResponse("Product not found or not deleted"));
 
             return Ok(ApiResponse.SuccessResponse(true, "Product restored successfully"));
         }
 
-        // -----------------------------
-        // Search products (public)
-        // -----------------------------
         [HttpGet("search")]
         [AllowAnonymous]
         public async Task<IActionResult> Search(
@@ -121,5 +103,36 @@ namespace MyApp.Controllers
             var results = await _productService.SearchAsync(filter);
             return Ok(ApiResponse.SuccessResponse(results, "Products retrieved successfully"));
         }
+
+        // -------------------------------
+        // Add multiple images to product
+        // -------------------------------
+        //[HttpPost("{id}/images")]
+        //[Authorize(Roles = "Admin")]
+        //public async Task<IActionResult> AddImages(int id, [FromForm] List<IFormFile> images)
+        //{
+        //    if (images == null || images.Count == 0)
+        //        return BadRequest(ApiResponse.FailResponse("No images provided"));
+
+        //    var result = await _productService.AddImagesAsync(id, images);
+        //    if (!result)
+        //        return NotFound(ApiResponse.FailResponse("Product not found"));
+
+        //    return Ok(ApiResponse.SuccessResponse(true, "Images added successfully"));
+        //}
+
+        //// -------------------------------
+        //// Delete a specific image of product
+        //// -------------------------------
+        //[HttpDelete("{productId}/images/{imageId}")]
+        //[Authorize(Roles = "Admin")]
+        //public async Task<IActionResult> DeleteImage(int productId, int imageId)
+        //{
+        //    var result = await _productService.DeleteImageAsync(productId, imageId);
+        //    if (!result)
+        //        return NotFound(ApiResponse.FailResponse("Image not found"));
+
+        //    return Ok(ApiResponse.SuccessResponse(true, "Image deleted successfully"));
+        //}
     }
 }

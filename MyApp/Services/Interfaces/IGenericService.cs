@@ -10,5 +10,8 @@ namespace MyApp.Services.Interfaces
         Task<TDto> AddAsync(TDto dto);
         Task<TDto?> UpdateAsync(int id, TDto dto);
         Task<bool> DeleteAsync(int id);
+
+        
+        
     }
 }

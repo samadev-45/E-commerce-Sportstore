@@ -1,10 +1,13 @@
-﻿namespace MyApp.DTOs.Orders
+﻿using MyApp.Common.Enums;
+
+namespace MyApp.DTOs.Orders
 {
     public class CreateOrderDto
     {
         public string Address { get; set; } = string.Empty;
-        public string PaymentType { get; set; } = "COD"; // "COD" or "Online"
         
-        
+        public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
+
+
     }
 }

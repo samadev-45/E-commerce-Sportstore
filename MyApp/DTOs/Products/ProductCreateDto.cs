@@ -6,6 +6,8 @@
         public string Description { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public IFormFile? Image { get; set; }
+
+        // Multiple images as IFormFile
+        public List<IFormFile> Images { get; set; } = new();
     }
 }

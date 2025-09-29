@@ -18,10 +18,11 @@ namespace MyApp.Entities
         // Default status using OrderStatus helper
         public string Status { get; set; } = OrderStatus.Pending.ToString();
 
-        public string PaymentType { get; set; } = "COD";
+        // ✅ Change from string → Enum
+        public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
+
         public decimal TotalPrice { get; set; }
         public string? PaymentId { get; set; }
-        
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
