@@ -11,5 +11,7 @@ namespace MyApp.Entities
 
         public int UserId { get; set; }
         public User User { get; set; } = null!;
+        public int Quantity { get; set; } = 1;
+
     }
 }

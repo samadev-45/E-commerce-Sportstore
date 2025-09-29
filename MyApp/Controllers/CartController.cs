@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.Common;
-using MyApp.Helpers;
+using MyApp.DTOs.Cart;
 using MyApp.Services.Interfaces;
+using System;
+using System.Threading.Tasks;
 
 namespace MyApp.Controllers
 {
@@ -18,19 +20,23 @@ namespace MyApp.Controllers
             _cartService = cartService;
         }
 
+        private int GetUserId()
+        {
+            var userIdClaim = User.FindFirst("userId");
+            if (userIdClaim == null)
+                throw new UnauthorizedAccessException("User ID not found in token");
+
+            return int.Parse(userIdClaim.Value);
+        }
+
         // -----------------------------
         // Get cart items for current user
         // -----------------------------
         [HttpGet("user")]
-        public async Task<IActionResult> GetCartForCurrentUser()
+        public async Task<IActionResult> GetUserCart()
         {
-            var userIdClaim = User.FindFirst("userId");
-            if (userIdClaim == null)
-                return Unauthorized(ApiResponse.FailResponse("Unauthorized"));
-
-            int userId = int.Parse(userIdClaim.Value);
+            var userId = GetUserId();
             var cart = await _cartService.GetUserCartAsync(userId);
-
             return Ok(ApiResponse.SuccessResponse(cart, "Cart retrieved successfully"));
         }
 
@@ -40,14 +46,10 @@ namespace MyApp.Controllers
         [HttpPost("user/add/{productId}")]
         public async Task<IActionResult> AddToCart(int productId, [FromQuery] int quantity = 1)
         {
-            var userIdClaim = User.FindFirst("userId");
-            if (userIdClaim == null)
-                return Unauthorized(ApiResponse.FailResponse("Unauthorized"));
+            var userId = GetUserId();
+            var cartItem = await _cartService.AddToCartAsync(userId, productId, quantity);
 
-            int userId = int.Parse(userIdClaim.Value);
-            await _cartService.AddToCartAsync(userId, productId, quantity);
-
-            return Ok(ApiResponse.SuccessResponse(null, "Product added to cart"));
+            return Ok(ApiResponse.SuccessResponse(cartItem, "Product added to cart"));
         }
 
         // -----------------------------
@@ -56,11 +58,7 @@ namespace MyApp.Controllers
         [HttpDelete("user/remove/{productId}")]
         public async Task<IActionResult> RemoveFromCart(int productId)
         {
-            var userIdClaim = User.FindFirst("userId");
-            if (userIdClaim == null)
-                return Unauthorized(ApiResponse.FailResponse("Unauthorized"));
-
-            int userId = int.Parse(userIdClaim.Value);
+            var userId = GetUserId();
             await _cartService.RemoveFromCartAsync(userId, productId);
 
             return Ok(ApiResponse.SuccessResponse(null, "Product removed from cart"));
@@ -72,14 +70,13 @@ namespace MyApp.Controllers
         [HttpPut("user/update/{productId}")]
         public async Task<IActionResult> UpdateQuantity(int productId, [FromQuery] int quantity)
         {
-            var userIdClaim = User.FindFirst("userId");
-            if (userIdClaim == null)
-                return Unauthorized(ApiResponse.FailResponse("Unauthorized"));
+            var userId = GetUserId();
+            var cartItem = await _cartService.UpdateQuantityAsync(userId, productId, quantity);
 
-            int userId = int.Parse(userIdClaim.Value);
-            await _cartService.UpdateQuantityAsync(userId, productId, quantity);
+            if (cartItem == null)
+                return NotFound(ApiResponse.SuccessResponse(null, "Product not found in cart"));
 
-            return Ok(ApiResponse.SuccessResponse(null, "Quantity updated"));
+            return Ok(ApiResponse.SuccessResponse(cartItem, "Quantity updated"));
         }
     }
 }

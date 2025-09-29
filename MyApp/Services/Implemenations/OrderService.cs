@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using MyApp.Common.Enums;
 using MyApp.Data;
 using MyApp.DTOs.Orders;
 using MyApp.Entities;
 using MyApp.Repositories.Interfaces;
 using MyApp.Services.Interfaces;
-using MyApp.Common.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,15 +16,16 @@ namespace MyApp.Services.Implementations
 {
     public class OrderService : GenericService<Order, OrderDto>, IOrderService
     {
-        private readonly IOrderRepository _orderRepository;
-        private readonly ICartRepository _cartRepository;
+        private readonly IGenericRepository<Order> _orderRepository;
+        private readonly IGenericRepository<CartItem> _cartRepository;
         private readonly IProductRepository _productRepository;
         private readonly IRazorpayService _razorpayService;
-        private readonly AppDbContext _context; 
+        private readonly AppDbContext _context;
+
 
         public OrderService(
-            IOrderRepository orderRepository,
-            ICartRepository cartRepository,
+            IGenericRepository<Order> orderRepository,
+            IGenericRepository<CartItem> cartRepository,
             IProductRepository productRepository,
             IMapper mapper,
             IHttpContextAccessor httpContextAccessor,
@@ -39,20 +40,17 @@ namespace MyApp.Services.Implementations
             _context = context;
         }
 
-
-
         // -----------------------------
         // Admin: Get all orders (with search & filter)
         // -----------------------------
         public async Task<IEnumerable<AdminOrderDto>> GetAllOrdersForAdminAsync(string? search = null, string? status = null)
         {
-            var query = _context.Orders
+            var query = _orderRepository.Query()
                 .Include(o => o.User)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                 .AsQueryable();
 
-            // Search by user name or order ID
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim().ToLower();
@@ -62,7 +60,6 @@ namespace MyApp.Services.Implementations
                 );
             }
 
-            // Filter by status (trim and lower for safety)
             if (!string.IsNullOrWhiteSpace(status))
             {
                 status = status.Trim().ToLower();
@@ -71,10 +68,9 @@ namespace MyApp.Services.Implementations
 
             var orders = await query.ToListAsync();
 
-            // Map manually to ensure nested items are included correctly
-            var result = orders.Select(o => new AdminOrderDto
+            return orders.Select(o => new AdminOrderDto
             {
-                OrderId = o.Id.ToString(),
+                OrderId = $"order_{o.Id}",
                 UserName = o.User?.Name ?? string.Empty,
                 UserEmail = o.User?.Email ?? string.Empty,
                 Address = o.Address,
@@ -86,22 +82,16 @@ namespace MyApp.Services.Implementations
                     ProductName = oi.Product?.Name ?? string.Empty,
                     Quantity = oi.Quantity,
                     UnitPrice = oi.UnitPrice
-                    // Don't assign TotalPrice; it's calculated automatically
                 }).ToList()
-
             });
-
-            return result;
         }
-
 
         // -----------------------------
         // Admin: Get order by ID
         // -----------------------------
         public async Task<AdminOrderDto?> GetOrderByIdForAdminAsync(int orderId)
         {
-            // Include User and OrderItems with Product
-            var order = await _context.Orders
+            var order = await _orderRepository.Query()
                 .Include(o => o.User)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
@@ -109,8 +99,7 @@ namespace MyApp.Services.Implementations
 
             if (order == null) return null;
 
-            // Map to AdminOrderDto manually
-            var result = new AdminOrderDto
+            return new AdminOrderDto
             {
                 OrderId = $"order_{order.Id}",
                 UserName = order.User.Name,
@@ -126,29 +115,33 @@ namespace MyApp.Services.Implementations
                     UnitPrice = oi.UnitPrice
                 }).ToList()
             };
-
-            return result;
         }
-
-
 
         // -----------------------------
         // Create order for user
         // -----------------------------
         public async Task<OrderDto> CreateOrderAsync(int userId, CreateOrderDto dto)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // Start a database transaction
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var cartItems = await _cartRepository.GetCartByUserIdAsync(userId);
+                // Get cart items for the user, include product details
+                var cartItems = await _cartRepository.Query()
+                    .Where(c => c.UserId == userId)
+                    .Include(c => c.Product)
+                    .ToListAsync();
+
                 if (!cartItems.Any())
                     throw new InvalidOperationException("Cart is empty.");
 
+                // Map order DTO to entity
                 var order = _mapper.Map<Order>(dto);
                 order.UserId = userId;
                 order.OrderItems = new List<OrderItem>();
                 decimal total = 0;
 
+                // Create order items from cart
                 foreach (var cartItem in cartItems)
                 {
                     var product = await _productRepository.GetByIdAsync(cartItem.ProductId)
@@ -171,21 +164,25 @@ namespace MyApp.Services.Implementations
                     ? OrderStatus.Pending.ToString()
                     : OrderStatus.PaymentInitiated.ToString();
 
+                // Add order to repository
                 await _orderRepository.AddAsync(order);
 
                 // Remove cart items
-                await Task.WhenAll(cartItems.Select(c => _cartRepository.DeleteAsync(c)));
+                foreach (var c in cartItems)
+                    await _cartRepository.DeleteAsync(c);
 
+                // Save all changes
+                await _cartRepository.SaveChangesAsync();
                 await _orderRepository.SaveChangesAsync();
 
+                // Handle online payment if required
                 if (dto.PaymentMethod == PaymentMethod.Online)
-                {
                     await HandleOnlinePayment(order);
-                }
 
+                // Commit transaction
                 await transaction.CommitAsync();
-                return _mapper.Map<OrderDto>(order);
 
+                return _mapper.Map<OrderDto>(order);
             }
             catch
             {
@@ -193,6 +190,8 @@ namespace MyApp.Services.Implementations
                 throw;
             }
         }
+
+
 
         private async Task HandleOnlinePayment(Order order)
         {
@@ -211,9 +210,11 @@ namespace MyApp.Services.Implementations
 
         public async Task<IEnumerable<OrderDto>> GetOrdersByUserAsync(int userId)
         {
-            var orders = await _orderRepository.GetOrdersByUserIdAsync(userId);
-            return _mapper.Map<IEnumerable<OrderDto>>(orders);
+            var orders = await _orderRepository.Query()
+                .Where(o => o.UserId == userId)
+                .ToListAsync();
 
+            return _mapper.Map<IEnumerable<OrderDto>>(orders);
         }
 
         public async Task CancelOrderAsync(int orderId)
@@ -237,11 +238,8 @@ namespace MyApp.Services.Implementations
                 throw new KeyNotFoundException("Order not found.");
 
             if (!string.IsNullOrEmpty(status))
-            {
                 order.Status = status;
-            }
             else if (statusId.HasValue)
-            {
                 order.Status = statusId.Value switch
                 {
                     1 => OrderStatus.Pending.ToString(),
@@ -249,7 +247,6 @@ namespace MyApp.Services.Implementations
                     3 => OrderStatus.Delivered.ToString(),
                     _ => throw new ArgumentException("Invalid statusId.")
                 };
-            }
 
             order.ModifiedOn = DateTime.UtcNow;
             if (!string.IsNullOrEmpty(modifiedByUserId) && int.TryParse(modifiedByUserId, out int modifiedBy))

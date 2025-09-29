@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MyApp.Common;
 using MyApp.DTOs.Wishlist;
+using MyApp.DTOs.Cart;
 using MyApp.Services.Interfaces;
 using System;
 using System.Threading.Tasks;
@@ -29,7 +30,6 @@ namespace MyApp.Controllers
             return int.Parse(userIdClaim.Value);
         }
 
-        // GET: api/wishlist/user
         [HttpGet("user")]
         public async Task<IActionResult> GetWishlistForCurrentUser()
         {
@@ -37,7 +37,6 @@ namespace MyApp.Controllers
             return Ok(ApiResponse.SuccessResponse(wishlist, "Wishlist retrieved successfully"));
         }
 
-        // POST: api/wishlist/user/toggle/{productId}
         [HttpPost("user/toggle/{productId}")]
         public async Task<IActionResult> ToggleWishlist(int productId)
         {
@@ -50,13 +49,16 @@ namespace MyApp.Controllers
             return Ok(ApiResponse.SuccessResponse(result, "Product added to wishlist"));
         }
 
-        // POST: api/wishlist/user/move-to-cart/{productId}
         [HttpPost("user/move-to-cart/{productId}")]
         public async Task<IActionResult> MoveToCart(int productId)
         {
-            await _wishlistService.MoveToCartAsync(GetUserId(), productId);
-            var wishlist = await _wishlistService.GetUserWishlistAsync(GetUserId());
-            return Ok(ApiResponse.SuccessResponse(wishlist, "Product moved to cart"));
+            int userId = GetUserId();
+            var cartItem = await _wishlistService.MoveToCartAsync(userId, productId);
+
+            if (cartItem == null)
+                return NotFound(ApiResponse.SuccessResponse(null, "Product not found in wishlist"));
+
+            return Ok(ApiResponse.SuccessResponse(cartItem, "Product moved to cart"));
         }
     }
 }

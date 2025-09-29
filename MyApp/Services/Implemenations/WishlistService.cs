@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MyApp.Data;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyApp.DTOs.Wishlist;
+using MyApp.DTOs.Cart;
 using MyApp.Entities;
+using MyApp.Repositories.Interfaces;
 using MyApp.Services.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,73 +13,133 @@ namespace MyApp.Services.Implementations
 {
     public class WishlistService : IWishlistService
     {
-        private readonly AppDbContext _context;
+        private readonly IGenericRepository<WishlistItem> _wishlistRepository;
+        private readonly IGenericRepository<CartItem> _cartRepository;
+        private readonly IGenericRepository<Product> _productRepository;
 
-        public WishlistService(AppDbContext context)
+        public WishlistService(
+            IGenericRepository<WishlistItem> wishlistRepository,
+            IGenericRepository<CartItem> cartRepository,
+            IGenericRepository<Product> productRepository
+        )
         {
-            _context = context;
+            _wishlistRepository = wishlistRepository;
+            _cartRepository = cartRepository;
+            _productRepository = productRepository;
         }
 
-        // Toggle wishlist: Add if not exists, remove if exists
         public async Task<WishlistItemDto?> ToggleWishlistAsync(int userId, int productId)
         {
-            var existing = await _context.WishlistItems
+            var existing = await _wishlistRepository.Query()
                 .Include(w => w.Product)
                 .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId);
 
             if (existing != null)
             {
-                _context.WishlistItems.Remove(existing);
-                await _context.SaveChangesAsync();
-                return null; // removed
+                await _wishlistRepository.DeleteAsync(existing);
+                await _wishlistRepository.SaveChangesAsync();
+                return null;
             }
-            else
+
+            var wishlistItem = new WishlistItem
             {
-                var wishlistItem = new WishlistItem
-                {
-                    UserId = userId,
-                    ProductId = productId
-                };
-                await _context.WishlistItems.AddAsync(wishlistItem);
-                await _context.SaveChangesAsync();
+                UserId = userId,
+                ProductId = productId,
+                Quantity = 1
+            };
 
-                var product = await _context.Products.FindAsync(productId);
+            await _wishlistRepository.AddAsync(wishlistItem);
+            await _wishlistRepository.SaveChangesAsync();
 
-                return new WishlistItemDto
-                {
-                    Id = wishlistItem.Id,
-                    ProductId = productId,
-                    ProductName = product?.Name ?? "",
-                    Price = product?.Price ?? 0
-                };
-            }
+            var product = await _productRepository.Query()
+                .FirstOrDefaultAsync(p => p.Id == productId);
+
+            return new WishlistItemDto
+            {
+                Id = wishlistItem.Id,
+                ProductId = productId,
+                ProductName = product?.Name ?? "",
+                Price = product?.Price ?? 0,
+                Quantity = wishlistItem.Quantity
+            };
         }
 
         public async Task<List<WishlistItemDto>> GetUserWishlistAsync(int userId)
         {
-            return await _context.WishlistItems
+            var items = await _wishlistRepository.Query()
                 .Where(w => w.UserId == userId)
                 .Include(w => w.Product)
-                .Select(w => new WishlistItemDto
-                {
-                    Id = w.Id,
-                    ProductId = w.ProductId,
-                    ProductName = w.Product.Name,
-                    Price = w.Product.Price
-                })
                 .ToListAsync();
+
+            return items.Select(w => new WishlistItemDto
+            {
+                Id = w.Id,
+                ProductId = w.ProductId,
+                ProductName = w.Product?.Name ?? "",
+                Price = w.Product?.Price ?? 0,
+                Quantity = w.Quantity
+            }).ToList();
         }
 
-        public async Task MoveToCartAsync(int userId, int productId)
+        public async Task<CartItemDto?> MoveToCartAsync(int userId, int productId)
         {
-            var wishlistItem = await _context.WishlistItems
+            var wishlistItem = await _wishlistRepository.Query()
+                .Include(w => w.Product)
                 .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId);
 
-            if (wishlistItem != null)
+            if (wishlistItem == null) return null;
+
+            int quantityToMove = wishlistItem.Quantity;
+            await _wishlistRepository.DeleteAsync(wishlistItem);
+
+            var existingCartItem = await _cartRepository.Query()
+                .Include(c => c.Product)
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+
+            CartItem cartItem;
+
+            if (existingCartItem != null)
             {
-                _context.WishlistItems.Remove(wishlistItem);
-                // Here, you can also add logic to add the product to the user's cart
-                await _context.SaveChangesAsync();
+                existingCartItem.Quantity += quantityToMove;
+                await _cartRepository.UpdateAsync(existingCartItem);
+                cartItem = existingCartItem;
+            }
+            else
+            {
+                cartItem = new CartItem
+                {
+                    UserId = userId,
+                    ProductId = productId,
+                    Quantity = quantityToMove
+                };
+                await _cartRepository.AddAsync(cartItem);
+            }
+
+            await _wishlistRepository.SaveChangesAsync();
+            await _cartRepository.SaveChangesAsync();
+
+            var product = wishlistItem.Product ?? existingCartItem?.Product;
+
+            return new CartItemDto
+            {
+                Id = cartItem.Id,
+                ProductId = cartItem.ProductId,
+                ProductName = product?.Name ?? "",
+                Price = product?.Price ?? 0,
+                Quantity = cartItem.Quantity
+            };
+        }
+
+        public async Task UpdateWishlistQuantityAsync(int userId, int productId, int quantity)
+        {
+            var item = await _wishlistRepository.Query()
+                .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId);
+
+            if (item != null && quantity > 0)
+            {
+                item.Quantity = quantity;
+                await _wishlistRepository.UpdateAsync(item);
+                await _wishlistRepository.SaveChangesAsync();
             }
         }
     }

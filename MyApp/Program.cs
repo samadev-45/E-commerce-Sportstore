@@ -27,9 +27,8 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Repositories
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<ICartRepository, CartRepository>();
-builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -49,33 +48,7 @@ builder.Services.AddScoped<IRazorpayService, RazorpayService>();
 
 
 
-// --------------------------- CLOUDINARY ---------------------------
-//builder.Services.Configure<CloudinarySettings>(
-//    builder.Configuration.GetSection("CloudinarySettings")
 
-//);
-
-
-//var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
-//Console.WriteLine($"Loaded CloudinarySettings: CloudName={cloudinarySettings?.CloudName}, ApiKey={cloudinarySettings?.ApiKey}, ApiSecret=***");
-//Console.WriteLine($"Loaded CloudinarySettings: CloudName={cloudinarySettings?.CloudName}, ApiKey={cloudinarySettings?.ApiKey}, ApiSecret=***");
-//if (string.IsNullOrWhiteSpace(cloudinarySettings?.CloudName) || string.IsNullOrWhiteSpace(cloudinarySettings?.ApiKey) || string.IsNullOrWhiteSpace(cloudinarySettings?.ApiSecret))
-//{
-//    throw new InvalidOperationException("Cloudinary settings are missing or invalid in appsettings.json.");
-//}
-
-//builder.Services.AddSingleton(sp =>
-//{
-//    var cfg = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
-//    var account = new Account(cfg.CloudName, cfg.ApiKey, cfg.ApiSecret);
-//    var cloudinary = new Cloudinary(account)
-//    {
-//        Api = { Secure = true }
-//    };
-//    return cloudinary;
-//});
-
-//builder.Services.AddScoped<IImageService, CloudinaryImageService>();
 
 // --------------------------- JWT AUTHENTICATION ---------------------------
 var jwt = builder.Configuration.GetSection("Jwt");
