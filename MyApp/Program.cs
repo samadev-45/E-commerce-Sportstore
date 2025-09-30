@@ -12,8 +12,6 @@ using MyApp.Services.Interfaces;
 using System.Security.Claims;
 using System.Text;
 
-using Microsoft.Extensions.Options;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // --------------------------- DATABASE ---------------------------
@@ -28,8 +26,6 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
-
-
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -37,18 +33,13 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-
 builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddHttpContextAccessor();
 
-//rAZORPAY
+// Razorpay
 builder.Services.Configure<RazorpaySettings>(builder.Configuration.GetSection("Razorpay"));
 builder.Services.AddScoped<IRazorpayService, RazorpayService>();
-
-
-
-
 
 // --------------------------- JWT AUTHENTICATION ---------------------------
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -72,6 +63,19 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
         RoleClaimType = ClaimTypes.Role
     };
+});
+
+// --------------------------- CORS (Allow React App) ---------------------------
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5174") // React dev server
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
 });
 
 // --------------------------- CONTROLLERS ---------------------------
@@ -129,7 +133,12 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
+
+//  CORS must be BEFORE authentication
+app.UseCors("AllowReactApp");
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();

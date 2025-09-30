@@ -18,9 +18,6 @@ namespace MyApp.Controllers
             _auth = auth;
         }
 
-        // -----------------------------
-        // Registration (no JWT)
-        // -----------------------------
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
@@ -35,9 +32,6 @@ namespace MyApp.Controllers
             return Ok(ApiResponse.SuccessResponse(result, "User created successfully"));
         }
 
-        // -----------------------------
-        // Login (generate JWT + Refresh Token)
-        // -----------------------------
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
@@ -49,41 +43,93 @@ namespace MyApp.Controllers
             if (loginResult == null)
                 return Unauthorized(ApiResponse.FailResponse("Invalid credentials or user blocked"));
 
-            return Ok(ApiResponse.SuccessResponse(loginResult, "Login successful"));
+            // Cookies for production
+            var accessCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,                 // HTTPS required
+                SameSite = SameSiteMode.None,  // Allows cross-site requests
+                Path = "/",
+                Expires = DateTime.UtcNow.AddMinutes(30)
+            };
+            Response.Cookies.Append("accessToken", loginResult.Token, accessCookieOptions);
+
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/",
+                Expires = DateTime.UtcNow.AddDays(7)
+            };
+            Response.Cookies.Append("refreshToken", loginResult.RefreshToken, refreshCookieOptions);
+
+            return Ok(ApiResponse.SuccessResponse(new
+            {
+                UserId = loginResult.UserId,
+                Email = loginResult.Email,
+                Role = loginResult.Role,
+                Name = loginResult.Name
+            }, "Login successful"));
         }
 
-        // -----------------------------
-        // Refresh JWT using Refresh Token
-        // -----------------------------
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto dto)
+        public async Task<IActionResult> Refresh()
         {
-            if (string.IsNullOrWhiteSpace(dto.RefreshToken))
-                return BadRequest(ApiResponse.FailResponse("Refresh token is required"));
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+                return BadRequest(ApiResponse.FailResponse("Refresh token missing"));
 
-            var result = await _auth.RefreshAsync(dto.RefreshToken);
-
+            var result = await _auth.RefreshAsync(refreshToken);
             if (result == null)
                 return Unauthorized(ApiResponse.FailResponse("Invalid or expired refresh token"));
 
-            return Ok(ApiResponse.SuccessResponse(result, "Token refreshed successfully"));
+            var accessCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/",
+                Expires = DateTime.UtcNow.AddMinutes(30)
+            };
+            Response.Cookies.Append("accessToken", result.Token, accessCookieOptions);
+
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/",
+                Expires = DateTime.UtcNow.AddDays(7)
+            };
+            Response.Cookies.Append("refreshToken", result.RefreshToken, refreshCookieOptions);
+
+            return Ok(ApiResponse.SuccessResponse(null, "Token refreshed successfully"));
         }
 
-        // -----------------------------
-        // Revoke Refresh Token (Logout)
-        // -----------------------------
         [HttpPost("revoke")]
-        public async Task<IActionResult> Revoke([FromBody] RevokeTokenDto dto)
+        public async Task<IActionResult> Revoke()
         {
-            if (string.IsNullOrWhiteSpace(dto.RefreshToken))
-                return BadRequest(ApiResponse.FailResponse("Refresh token is required"));
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+                return BadRequest(ApiResponse.FailResponse("Refresh token missing"));
 
-            var success = await _auth.RevokeAsync(dto.RefreshToken);
-
+            var success = await _auth.RevokeAsync(refreshToken);
             if (!success)
                 return BadRequest(ApiResponse.FailResponse("Invalid or already revoked token"));
 
-            return Ok(ApiResponse.SuccessResponse(null, "Token revoked successfully"));
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/"
+            };
+
+            Response.Cookies.Delete("accessToken", cookieOptions);
+            Response.Cookies.Delete("refreshToken", cookieOptions);
+
+            return Ok(ApiResponse.SuccessResponse(null, "Logged out successfully"));
         }
     }
 }
