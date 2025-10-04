@@ -28,10 +28,12 @@ namespace MyApp.Services.Implementations
             _productRepository = productRepository;
         }
 
+        // Toggle wishlist item
         public async Task<WishlistItemDto?> ToggleWishlistAsync(int userId, int productId)
         {
             var existing = await _wishlistRepository.Query()
                 .Include(w => w.Product)
+                    .ThenInclude(p => p.ProductImages) // Include images
                 .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId);
 
             if (existing != null)
@@ -52,6 +54,7 @@ namespace MyApp.Services.Implementations
             await _wishlistRepository.SaveChangesAsync();
 
             var product = await _productRepository.Query()
+                .Include(p => p.ProductImages)
                 .FirstOrDefaultAsync(p => p.Id == productId);
 
             return new WishlistItemDto
@@ -60,15 +63,21 @@ namespace MyApp.Services.Implementations
                 ProductId = productId,
                 ProductName = product?.Name ?? "",
                 Price = product?.Price ?? 0,
-                Quantity = wishlistItem.Quantity
+                Quantity = wishlistItem.Quantity,
+                Category = product?.Category ?? "",
+                ImagesBase64 = product?.ProductImages
+                    .Select(img => Convert.ToBase64String(img.FileData))
+                    .ToList() ?? new List<string>()
             };
         }
 
+        // Get wishlist for a user
         public async Task<List<WishlistItemDto>> GetUserWishlistAsync(int userId)
         {
             var items = await _wishlistRepository.Query()
                 .Where(w => w.UserId == userId)
                 .Include(w => w.Product)
+                    .ThenInclude(p => p.ProductImages)
                 .ToListAsync();
 
             return items.Select(w => new WishlistItemDto
@@ -77,14 +86,20 @@ namespace MyApp.Services.Implementations
                 ProductId = w.ProductId,
                 ProductName = w.Product?.Name ?? "",
                 Price = w.Product?.Price ?? 0,
-                Quantity = w.Quantity
+                Quantity = w.Quantity,
+                Category = w.Product?.Category ?? "",
+                ImagesBase64 = w.Product?.ProductImages
+                    .Select(img => Convert.ToBase64String(img.FileData))
+                    .ToList() ?? new List<string>()
             }).ToList();
         }
 
+        // Move item to cart
         public async Task<CartItemDto?> MoveToCartAsync(int userId, int productId)
         {
             var wishlistItem = await _wishlistRepository.Query()
                 .Include(w => w.Product)
+                    .ThenInclude(p => p.ProductImages)
                 .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId);
 
             if (wishlistItem == null) return null;
@@ -94,6 +109,7 @@ namespace MyApp.Services.Implementations
 
             var existingCartItem = await _cartRepository.Query()
                 .Include(c => c.Product)
+                    .ThenInclude(p => p.ProductImages)
                 .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
 
             CartItem cartItem;
@@ -130,6 +146,7 @@ namespace MyApp.Services.Implementations
             };
         }
 
+        // Update quantity of wishlist item
         public async Task UpdateWishlistQuantityAsync(int userId, int productId, int quantity)
         {
             var item = await _wishlistRepository.Query()

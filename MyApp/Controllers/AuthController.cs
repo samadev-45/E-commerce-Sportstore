@@ -47,8 +47,8 @@ namespace MyApp.Controllers
             var accessCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,                 // HTTPS required
-                SameSite = SameSiteMode.None,  // Allows cross-site requests
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 Path = "/",
                 Expires = DateTime.UtcNow.AddMinutes(30)
             };
@@ -64,14 +64,18 @@ namespace MyApp.Controllers
             };
             Response.Cookies.Append("refreshToken", loginResult.RefreshToken, refreshCookieOptions);
 
+            // Return JWT and refresh token in the response body for testing
             return Ok(ApiResponse.SuccessResponse(new
             {
                 UserId = loginResult.UserId,
                 Email = loginResult.Email,
                 Role = loginResult.Role,
-                Name = loginResult.Name
+                Name = loginResult.Name,
+                Token = loginResult.Token,            // JWT token
+                RefreshToken = loginResult.RefreshToken // Refresh token
             }, "Login successful"));
         }
+
 
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
@@ -84,6 +88,7 @@ namespace MyApp.Controllers
             if (result == null)
                 return Unauthorized(ApiResponse.FailResponse("Invalid or expired refresh token"));
 
+            // Set new cookies
             var accessCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -104,8 +109,14 @@ namespace MyApp.Controllers
             };
             Response.Cookies.Append("refreshToken", result.RefreshToken, refreshCookieOptions);
 
-            return Ok(ApiResponse.SuccessResponse(null, "Token refreshed successfully"));
+            // Return new tokens in response body
+            return Ok(ApiResponse.SuccessResponse(new
+            {
+                Token = result.Token,
+                RefreshToken = result.RefreshToken
+            }, "Token refreshed successfully"));
         }
+
 
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke()

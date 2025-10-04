@@ -28,6 +28,14 @@ namespace MyApp.Services.Implementations
             _mapper = mapper;
         }
 
+        private void MapImagesToDto(Product product, ProductDto dto)
+        {
+            dto.ImagesBase64 = product.ProductImages?
+                                   .Where(pi => pi.FileData != null)
+                                   .Select(pi => Convert.ToBase64String(pi.FileData))
+                                   .ToList() ?? new List<string>();
+        }
+
         public override async Task<IEnumerable<ProductDto>> GetAllAsync()
         {
             var products = await _productRepository.Query()
@@ -37,13 +45,10 @@ namespace MyApp.Services.Implementations
 
             var dtos = _mapper.Map<IEnumerable<ProductDto>>(products);
 
-            // Map images to Base64
             foreach (var dto in dtos)
             {
                 var product = products.First(p => p.Id == dto.Id);
-                dto.ImagesBase64 = product.ProductImages
-                                          .Select(pi => Convert.ToBase64String(pi.FileData))
-                                          .ToList();
+                MapImagesToDto(product, dto);
             }
 
             return dtos;
@@ -55,39 +60,38 @@ namespace MyApp.Services.Implementations
             product.CreatedOn = DateTime.UtcNow;
             product.CreatedBy = GetCurrentUserId();
 
-            // Add multiple images
-            foreach (var file in dto.Images)
+            if (dto.Images != null && dto.Images.Any())
             {
-                using var ms = new MemoryStream();
-                await file.CopyToAsync(ms);
-
-                var productImage = new ProductImage
+                foreach (var file in dto.Images)
                 {
-                    Product = product,
-                    FileName = Path.GetFileNameWithoutExtension(file.FileName),
-                    FileExtension = Path.GetExtension(file.FileName),
-                    FileData = ms.ToArray()
-                };
+                    using var ms = new MemoryStream();
+                    await file.CopyToAsync(ms);
 
-                product.ProductImages.Add(productImage);
+                    var productImage = new ProductImage
+                    {
+                        Product = product,
+                        FileName = Path.GetFileNameWithoutExtension(file.FileName),
+                        FileExtension = Path.GetExtension(file.FileName),
+                        FileData = ms.ToArray()
+                    };
+
+                    product.ProductImages.Add(productImage);
+                }
             }
 
             await _productRepository.AddAsync(product);
             await _productRepository.SaveChangesAsync();
 
             var resultDto = _mapper.Map<ProductDto>(product);
-            resultDto.ImagesBase64 = product.ProductImages
-                                            .Select(pi => Convert.ToBase64String(pi.FileData))
-                                            .ToList();
-
+            MapImagesToDto(product, resultDto);
             return resultDto;
         }
 
         public async Task<bool?> UpdateAsync(int id, ProductUpdateDto dto)
         {
             var product = await _productRepository.Query()
-                                                  .Include(p => p.ProductImages)
-                                                  .FirstOrDefaultAsync(p => p.Id == id);
+                .Include(p => p.ProductImages)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null || product.IsDeleted) return null;
 
@@ -95,7 +99,6 @@ namespace MyApp.Services.Implementations
             product.ModifiedOn = DateTime.UtcNow;
             product.ModifiedBy = GetCurrentUserId();
 
-            // Add new images if provided
             if (dto.Images != null && dto.Images.Any())
             {
                 foreach (var file in dto.Images)
@@ -150,7 +153,10 @@ namespace MyApp.Services.Implementations
 
         public async Task<IEnumerable<ProductDto>> SearchAsync(ProductFilterDto filter)
         {
-            var query = _productRepository.Query().Include(p => p.ProductImages).AsQueryable();
+            var query = _productRepository.Query()
+                          .Include(p => p.ProductImages)
+                          .Where(p => !p.IsDeleted)
+                          .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(filter.Name))
                 query = query.Where(p => p.Name.Contains(filter.Name));
@@ -164,21 +170,18 @@ namespace MyApp.Services.Implementations
             if (filter.MaxPrice.HasValue)
                 query = query.Where(p => p.Price <= filter.MaxPrice.Value);
 
-            query = query.Where(p => !p.IsDeleted);
-
             var products = await query.ToListAsync();
             var dtos = _mapper.Map<IEnumerable<ProductDto>>(products);
 
             foreach (var dto in dtos)
             {
                 var product = products.First(p => p.Id == dto.Id);
-                dto.ImagesBase64 = product.ProductImages
-                                          .Select(pi => Convert.ToBase64String(pi.FileData))
-                                          .ToList();
+                MapImagesToDto(product, dto);
             }
 
             return dtos;
         }
+
         public async Task<bool> AddImagesAsync(int productId, List<IFormFile> images)
         {
             var product = await _productRepository.Query()
@@ -225,7 +228,23 @@ namespace MyApp.Services.Implementations
             await _productRepository.SaveChangesAsync();
             return true;
         }
+        public async Task<ProductDto> GetByIdAsync(int id)
+        {
+            // Fetch product with images included
+            var product = await _productRepository.Query()
+                .Include(p => p.ProductImages)
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
+            if (product == null) return null;
+
+            // Map to DTO
+            var dto = _mapper.Map<ProductDto>(product);
+
+            // Map images to Base64
+            MapImagesToDto(product, dto);
+
+            return dto;
+        }
 
     }
 }
